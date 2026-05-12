@@ -13,11 +13,11 @@ export default function Nav() {
         Rifty<span>Elites</span>
       </Link>
       <div className="nav-links">
-        <Link
-          to="/"
-          className={`nav-link${pathname === '/' ? ' active' : ''}`}
-        >
+        <Link to="/" className={`nav-link${pathname === '/' ? ' active' : ''}`}>
           Matrix
+        </Link>
+        <Link to="/log" className={`nav-link${pathname === '/log' ? ' active' : ''}`}>
+          Log
         </Link>
         <SignedIn>
           <Link
@@ -25,6 +25,9 @@ export default function Nav() {
             className={`nav-link${pathname === '/input' ? ' active' : ''}`}
           >
             Submit
+          </Link>
+          <Link to="/profile/me" className={`nav-link${pathname.startsWith('/profile') ? ' active' : ''}`}>
+            Profile
           </Link>
           {role === 'Admin' && (
             <Link

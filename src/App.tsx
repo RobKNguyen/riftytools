@@ -8,6 +8,8 @@ import { syncUser, clearUser } from './features/user/userSlice'
 import MatrixPage from './pages/MatrixPage'
 import InputPage from './pages/InputPage'
 import AdminPage from './pages/AdminPage'
+import LogPage from './pages/LogPage'
+import ProfilePage from './pages/ProfilePage'
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string
 
@@ -51,6 +53,14 @@ function RoleRoute({ role, children }: { role: string; children: React.ReactNode
   return <>{children}</>
 }
 
+function ProfileRedirect() {
+  const { isSignedIn, isLoaded } = useAuth()
+  const guid = useSelector((state: RootState) => state.user.guid)
+  if (!isLoaded) return null
+  if (!isSignedIn || !guid) return <Navigate to="/" replace />
+  return <Navigate to={`/profile/${guid}`} replace />
+}
+
 function AppContent() {
   const { isSignedIn, isLoaded } = useAuth()
   const { synced, status, syncStatus } = useSelector((state: RootState) => state.user)
@@ -92,6 +102,9 @@ function AppContent() {
             </RoleRoute>
           }
         />
+        <Route path="/log" element={<LogPage />} />
+        <Route path="/profile/me" element={<ProfileRedirect />} />
+        <Route path="/profile/:userGuid" element={<ProfilePage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

@@ -891,3 +891,279 @@ body {
 .admin-btn.reject:not(:disabled):hover {
   background: rgba(239, 68, 68, 0.2);
 }
+
+/* ── Result colours (shared) ─────────────────────────── */
+
+.result-win  { color: #4ade80; }
+.result-loss { color: #f87171; }
+.result-draw { color: #8b949e; }
+
+/* ── Log feed ─────────────────────────────────────────── */
+
+.log-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.log-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 4px;
+  border-bottom: 1px solid #21262d;
+}
+
+.log-item:last-child {
+  border-bottom: none;
+}
+
+.log-legends {
+  position: relative;
+  width: 52px;
+  height: 36px;
+  flex-shrink: 0;
+}
+
+.log-legend-img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #0d1117;
+  position: absolute;
+  top: 0;
+}
+
+.log-legend-img:first-child { left: 0; z-index: 2; }
+.log-legend-opp             { left: 16px; z-index: 1; }
+
+.log-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.log-headline {
+  font-size: 13px;
+  color: #e6edf3;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.log-username {
+  color: #e6edf3;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.log-username:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
+.log-verb { font-weight: 600; }
+
+.log-legend-name {
+  color: #c9d1d9;
+}
+
+.log-meta {
+  font-size: 11px;
+  color: #6e7681;
+  margin-top: 2px;
+}
+
+.log-badge {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ── Profile page ─────────────────────────────────────── */
+
+.profile-header-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.profile-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.profile-username {
+  font-size: 26px;
+  font-weight: 700;
+  color: #e6edf3;
+  letter-spacing: -0.5px;
+  margin-bottom: 4px;
+}
+
+.profile-since {
+  font-size: 13px;
+  color: #6e7681;
+}
+
+.stats-bar {
+  display: flex;
+  gap: 0;
+}
+
+.stat-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 16px 8px;
+  border-right: 1px solid #21262d;
+}
+
+.stat-item:last-child {
+  border-right: none;
+}
+
+.stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: #e6edf3;
+  letter-spacing: -0.5px;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: #6e7681;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.section-heading {
+  font-size: 13px;
+  font-weight: 700;
+  color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 16px;
+}
+
+.top-legends-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.legend-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 4px;
+  border-bottom: 1px solid #21262d;
+}
+
+.legend-card:last-child {
+  border-bottom: none;
+}
+
+.legend-card-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #30363d;
+  flex-shrink: 0;
+}
+
+.legend-card-body {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.legend-card-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e6edf3;
+  min-width: 120px;
+}
+
+.legend-card-wr {
+  font-size: 15px;
+  font-weight: 700;
+  min-width: 52px;
+}
+
+.legend-card-record {
+  font-size: 12px;
+  color: #6e7681;
+}
+
+.recent-results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.recent-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 4px;
+  border-bottom: 1px solid #21262d;
+}
+
+.recent-item:last-child {
+  border-bottom: none;
+}
+
+.recent-legends {
+  position: relative;
+  width: 52px;
+  height: 32px;
+  flex-shrink: 0;
+}
+
+.recent-legend-img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #0d1117;
+  position: absolute;
+  top: 0;
+}
+
+.recent-legend-img:first-child { left: 0; z-index: 2; }
+.recent-legend-opp             { left: 14px; z-index: 1; }
+
+.recent-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.recent-matchup {
+  font-size: 13px;
+  color: #e6edf3;
+  font-weight: 500;
+}
+
+.recent-vs {
+  color: #6e7681;
+  font-weight: 400;
+}
+
+.recent-format {
+  font-size: 12px;
+  color: #6e7681;
+}

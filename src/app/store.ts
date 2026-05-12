@@ -5,6 +5,8 @@ import legendsReducer from '../features/legends/legendsSlice'
 import formatsReducer from '../features/formats/formatsSlice'
 import userReducer from '../features/user/userSlice'
 import adminReducer from '../features/admin/adminSlice'
+import logReducer from '../features/log/logSlice'
+import profileReducer from '../features/profile/profileSlice'
 
 export const store = configureStore({
   reducer: {
@@ -14,6 +16,8 @@ export const store = configureStore({
     legends: legendsReducer,
     formats: formatsReducer,
     admin: adminReducer,
+    log: logReducer,
+    profile: profileReducer,
   },
 })
 
