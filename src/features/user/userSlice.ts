@@ -4,9 +4,9 @@ import { SWITCHBOARD_URL } from '../../services/switchboard'
 interface UserSyncResponse {
   Success: boolean
   Error?: string
-  guid: string
-  status: string
-  role: string
+  GUID: string
+  Status: string
+  Role: string
 }
 
 interface UserState {
@@ -74,9 +74,9 @@ const userSlice = createSlice({
       .addCase(syncUser.fulfilled, (state, action) => {
         state.syncStatus = 'success'
         state.synced = true
-        state.guid = action.payload.guid
-        state.status = action.payload.status
-        state.role = action.payload.role
+        state.guid = action.payload.GUID
+        state.status = action.payload.Status
+        state.role = action.payload.Role
         state.clerkID = action.meta.arg.clerkID
         state.username = action.meta.arg.username
       })
