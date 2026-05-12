@@ -68,6 +68,24 @@ body {
   color: #c9d1d9;
 }
 
+.nav-sign-in {
+  padding: 6px 14px;
+  background: #1c2128;
+  border: 1px solid #484f58;
+  border-radius: 6px;
+  color: #e6edf3;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.nav-sign-in:hover {
+  background: #21262d;
+  border-color: #8b949e;
+}
+
 /* ── Layout ──────────────────────────────────────────── */
 
 .page {

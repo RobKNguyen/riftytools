@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { UserButton } from '@clerk/clerk-react'
+import { SignInButton, SignedIn, SignedOut, UserButton } from '@clerk/clerk-react'
 
 export default function Nav() {
   const { pathname } = useLocation()
@@ -11,18 +11,25 @@ export default function Nav() {
       </Link>
       <div className="nav-links">
         <Link
-          to="/input"
-          className={`nav-link${pathname === '/input' ? ' active' : ''}`}
-        >
-          Submit
-        </Link>
-        <Link
-          to="/matrix"
-          className={`nav-link${pathname === '/matrix' ? ' active' : ''}`}
+          to="/"
+          className={`nav-link${pathname === '/' ? ' active' : ''}`}
         >
           Matrix
         </Link>
-        <UserButton />
+        <SignedIn>
+          <Link
+            to="/input"
+            className={`nav-link${pathname === '/input' ? ' active' : ''}`}
+          >
+            Submit
+          </Link>
+          <UserButton />
+        </SignedIn>
+        <SignedOut>
+          <SignInButton mode="modal">
+            <button className="nav-sign-in">Sign In</button>
+          </SignInButton>
+        </SignedOut>
       </div>
     </nav>
   )

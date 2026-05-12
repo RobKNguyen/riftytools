@@ -2,9 +2,8 @@ import { ClerkProvider, useAuth } from '@clerk/clerk-react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Provider } from 'react-redux'
 import { store } from './app/store'
-import LandingPage from './pages/LandingPage'
-import InputPage from './pages/InputPage'
 import MatrixPage from './pages/MatrixPage'
+import InputPage from './pages/InputPage'
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string
 
@@ -19,20 +18,12 @@ function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/" element={<MatrixPage />} />
         <Route
           path="/input"
           element={
             <ProtectedRoute>
               <InputPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/matrix"
-          element={
-            <ProtectedRoute>
-              <MatrixPage />
             </ProtectedRoute>
           }
         />
