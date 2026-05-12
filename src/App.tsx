@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { ClerkProvider, useAuth, useUser } from '@clerk/clerk-react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Provider, useDispatch, useSelector } from 'react-redux'
 import { store } from './app/store'
 import type { AppDispatch, RootState } from './app/store'
@@ -83,7 +83,7 @@ function AppContent() {
   }
 
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         <Route path="/" element={<MatrixPage />} />
         <Route
@@ -107,7 +107,7 @@ function AppContent() {
         <Route path="/profile/:userGuid" element={<ProfilePage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   )
 }
 
