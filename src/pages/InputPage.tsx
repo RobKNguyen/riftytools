@@ -9,7 +9,6 @@ import {
   WIN_GUID,
   LOSS_GUID,
   DRAW_GUID,
-  TEST_USER_GUID,
   computeMatchResult,
 } from '../constants'
 import Nav from '../components/Nav'
@@ -40,6 +39,7 @@ export default function InputPage() {
   const { data: formats, status: formatsStatus } = useSelector(
     (state: RootState) => state.formats
   )
+  const userGuid = useSelector((state: RootState) => state.user.guid)
 
   useEffect(() => {
     if (legendsStatus === 'idle') dispatch(fetchLegends())
@@ -70,7 +70,7 @@ export default function InputPage() {
     dispatch(
       submitGameResult({
         Format_GUID: form.Format_GUID,
-        User_GUID: TEST_USER_GUID,
+        User_GUID: userGuid ?? '',
         LegendUser_GUID: form.LegendUser_GUID,
         LegendOpp_GUID: form.LegendOpp_GUID,
         WentFirst: form.WentFirst,

@@ -22,9 +22,11 @@ const initialState: FormatsState = {
 export const fetchFormats = createAsyncThunk<
   Format[],
   void,
-  { rejectValue: string }
->('formats/fetch', async (_, { rejectWithValue }) => {
-  const data = await switchboard<Format[]>('Formats_Out')
+  { rejectValue: string; state: { user: { role: string | null } } }
+>('formats/fetch', async (_, { rejectWithValue, getState }) => {
+  const role = getState().user.role
+  const roles = role ? [role] : ['Player']
+  const data = await switchboard<Format[]>('Formats_Out', {}, roles)
   if (!data.Success) return rejectWithValue(data.Error ?? 'Failed to fetch formats')
   return data.Data ?? []
 })

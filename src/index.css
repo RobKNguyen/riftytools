@@ -736,3 +736,45 @@ body {
     flex: 1 1 calc(50% - 4px);
   }
 }
+
+/* ── Auth sync / pending screens ─────────────────────── */
+
+.sync-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  color: #8b949e;
+  font-size: 15px;
+}
+
+.pending-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.pending-card {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 12px;
+  padding: 48px 40px;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+}
+
+.pending-card h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #e6edf3;
+  margin-bottom: 12px;
+}
+
+.pending-card p {
+  font-size: 14px;
+  color: #8b949e;
+  line-height: 1.6;
+}

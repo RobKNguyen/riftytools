@@ -56,8 +56,10 @@ const initialState: GameResultState = {
 export const submitGameResult = createAsyncThunk<
   SubmitResponse,
   GameResultPayload,
-  { rejectValue: string }
->('gameResult/submit', async (payload, { rejectWithValue }) => {
+  { rejectValue: string; state: { user: { role: string | null } } }
+>('gameResult/submit', async (payload, { rejectWithValue, getState }) => {
+  const role = getState().user.role
+  const roles = role ? [role] : ['Player']
   const data = await switchboard<never>('GameResult_In', {
     Format_GUID: payload.Format_GUID,
     User_GUID: payload.User_GUID,
@@ -68,7 +70,7 @@ export const submitGameResult = createAsyncThunk<
     ResultFirst: payload.ResultFirst,
     ResultSecond: payload.ResultSecond,
     ResultThird: payload.ResultThird,
-  })
+  }, roles)
   if (!data.Success) return rejectWithValue(data.Error ?? 'Submission failed')
   return { Success: data.Success, GUID: data.GUID }
 })

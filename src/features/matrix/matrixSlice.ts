@@ -35,12 +35,14 @@ const initialState: MatrixState = {
 export const fetchMatrix = createAsyncThunk<
   MatrixCell[],
   MatrixFilters,
-  { rejectValue: string }
->('matrix/fetch', async ({ formatGuid, wentFirst }, { rejectWithValue }) => {
+  { rejectValue: string; state: { user: { role: string | null } } }
+>('matrix/fetch', async ({ formatGuid, wentFirst }, { rejectWithValue, getState }) => {
+  const role = getState().user.role
+  const roles = role ? [role] : ['Player']
   const payload: Record<string, string | boolean> = {}
   if (formatGuid) payload['Format_GUID'] = formatGuid
   if (wentFirst !== null) payload['WentFirst'] = wentFirst
-  const data = await switchboard<MatrixCell[]>('Matrix_Out', payload)
+  const data = await switchboard<MatrixCell[]>('Matrix_Out', payload, roles)
   if (!data.Success) return rejectWithValue(data.Error ?? 'Failed to fetch matrix')
   return data.Data ?? []
 })

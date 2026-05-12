@@ -26,9 +26,11 @@ const initialState: LegendsState = {
 export const fetchLegends = createAsyncThunk<
   Legend[],
   void,
-  { rejectValue: string }
->('legends/fetch', async (_, { rejectWithValue }) => {
-  const data = await switchboard<Legend[]>('Legends_Out')
+  { rejectValue: string; state: { user: { role: string | null } } }
+>('legends/fetch', async (_, { rejectWithValue, getState }) => {
+  const role = getState().user.role
+  const roles = role ? [role] : ['Player']
+  const data = await switchboard<Legend[]>('Legends_Out', {}, roles)
   if (!data.Success) return rejectWithValue(data.Error ?? 'Failed to fetch legends')
   return data.Data ?? []
 })
