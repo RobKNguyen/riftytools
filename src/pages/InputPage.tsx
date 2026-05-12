@@ -1,16 +1,33 @@
 import { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import type { AppDispatch, RootState } from '../app/store'
-import {
-  updateField,
-  resetForm,
-  submitGameResult,
-} from '../features/gameResult/gameResultSlice'
+import { updateField, resetForm, submitGameResult } from '../features/gameResult/gameResultSlice'
 import { fetchLegends } from '../features/legends/legendsSlice'
 import { fetchFormats } from '../features/formats/formatsSlice'
-import { RESULT_TYPES, TEST_USER_GUID } from '../constants'
+import {
+  RESULT_TYPES,
+  WIN_GUID,
+  LOSS_GUID,
+  DRAW_GUID,
+  TEST_USER_GUID,
+  computeMatchResult,
+} from '../constants'
 import Nav from '../components/Nav'
 import LegendSelect from '../components/LegendSelect'
+
+function resultLabel(guid: string): string {
+  if (guid === WIN_GUID)  return 'Win'
+  if (guid === LOSS_GUID) return 'Loss'
+  if (guid === DRAW_GUID) return 'Draw'
+  return '—'
+}
+
+function resultClass(guid: string): string {
+  if (guid === WIN_GUID)  return 'win'
+  if (guid === LOSS_GUID) return 'loss'
+  if (guid === DRAW_GUID) return 'draw'
+  return ''
+}
 
 export default function InputPage() {
   const dispatch = useDispatch<AppDispatch>()
@@ -32,12 +49,20 @@ export default function InputPage() {
   const selectedFormat = formats.find((f) => f.guid === form.Format_GUID)
   const maxGames = selectedFormat?.maxgames ?? 0
 
+  const matchResult = computeMatchResult(
+    form.ResultFirst,
+    form.ResultSecond,
+    form.ResultThird,
+    maxGames,
+  )
+
   const isValid =
     form.Format_GUID !== '' &&
     form.LegendUser_GUID !== '' &&
     form.LegendOpp_GUID !== '' &&
-    form.ResultType_GUID !== '' &&
-    form.ResultFirst !== ''
+    form.ResultFirst !== '' &&
+    (maxGames < 2 || form.ResultSecond !== '') &&
+    matchResult !== ''
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -49,7 +74,7 @@ export default function InputPage() {
         LegendUser_GUID: form.LegendUser_GUID,
         LegendOpp_GUID: form.LegendOpp_GUID,
         WentFirst: form.WentFirst,
-        ResultType_GUID: form.ResultType_GUID,
+        ResultType_GUID: matchResult,
         ResultFirst: form.ResultFirst,
         ResultSecond: maxGames >= 2 && form.ResultSecond !== '' ? form.ResultSecond : null,
         ResultThird: maxGames >= 3 && form.ResultThird !== '' ? form.ResultThird : null,
@@ -83,7 +108,12 @@ export default function InputPage() {
                       className={`btn-opt${form.Format_GUID === f.guid ? ' active' : ''}`}
                       onClick={() =>
                         dispatch(
-                          updateField({ Format_GUID: f.guid, ResultSecond: '', ResultThird: '' })
+                          updateField({
+                            Format_GUID: f.guid,
+                            ResultFirst: '',
+                            ResultSecond: '',
+                            ResultThird: '',
+                          })
                         )
                       }
                     >
@@ -138,24 +168,7 @@ export default function InputPage() {
                 </div>
               </div>
 
-              {/* Match Result */}
-              <div className="form-group">
-                <label className="form-label">Match Result</label>
-                <div className="btn-group">
-                  {RESULT_TYPES.map((r) => (
-                    <button
-                      key={r.guid}
-                      type="button"
-                      className={`btn-opt ${r.label.toLowerCase()}${form.ResultType_GUID === r.guid ? ' active' : ''}`}
-                      onClick={() => dispatch(updateField({ ResultType_GUID: r.guid }))}
-                    >
-                      {r.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Game-by-game */}
+              {/* Game-by-game results */}
               {maxGames > 0 && (
                 <>
                   <div className="divider" />
@@ -201,7 +214,7 @@ export default function InputPage() {
                         Game 3{' '}
                         <span
                           style={{
-                            color: '#475569',
+                            color: '#484f58',
                             fontWeight: 400,
                             textTransform: 'none',
                             letterSpacing: 0,
@@ -211,23 +224,33 @@ export default function InputPage() {
                         </span>
                       </label>
                       <div className="btn-group">
-                        <button
-                          type="button"
-                          className={`btn-opt${form.ResultThird === '' ? ' active' : ''}`}
-                          onClick={() => dispatch(updateField({ ResultThird: '' }))}
-                        >
-                          N/A
-                        </button>
                         {RESULT_TYPES.map((r) => (
                           <button
                             key={r.guid}
                             type="button"
                             className={`btn-opt ${r.label.toLowerCase()}${form.ResultThird === r.guid ? ' active' : ''}`}
-                            onClick={() => dispatch(updateField({ ResultThird: r.guid }))}
+                            onClick={() =>
+                              dispatch(
+                                updateField({
+                                  ResultThird:
+                                    form.ResultThird === r.guid ? '' : r.guid,
+                                })
+                              )
+                            }
                           >
                             {r.label}
                           </button>
                         ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Auto-calculated match result */}
+                  {matchResult !== '' && (
+                    <div className="form-group">
+                      <label className="form-label">Match Result</label>
+                      <div className={`result-indicator ${resultClass(matchResult)}`}>
+                        {resultLabel(matchResult)}
                       </div>
                     </div>
                   )}

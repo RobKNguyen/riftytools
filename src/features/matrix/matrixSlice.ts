@@ -15,6 +15,11 @@ export interface MatrixCell {
   winrate: number
 }
 
+export interface MatrixFilters {
+  formatGuid: string | null
+  wentFirst: boolean | null
+}
+
 interface MatrixState {
   data: MatrixCell[]
   status: 'idle' | 'loading' | 'success' | 'error'
@@ -29,11 +34,12 @@ const initialState: MatrixState = {
 
 export const fetchMatrix = createAsyncThunk<
   MatrixCell[],
-  string | null,
+  MatrixFilters,
   { rejectValue: string }
->('matrix/fetch', async (formatGuid, { rejectWithValue }) => {
-  const payload: Record<string, string> = {}
+>('matrix/fetch', async ({ formatGuid, wentFirst }, { rejectWithValue }) => {
+  const payload: Record<string, string | boolean> = {}
   if (formatGuid) payload['Format_GUID'] = formatGuid
+  if (wentFirst !== null) payload['WentFirst'] = wentFirst
   const data = await switchboard<MatrixCell[]>('Matrix_Out', payload)
   if (!data.Success) return rejectWithValue(data.Error ?? 'Failed to fetch matrix')
   return data.Data ?? []

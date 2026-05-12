@@ -25,15 +25,17 @@ export default function MatrixPage() {
 
   const [sortBy, setSortBy] = useState<SortBy>('winrate')
   const [formatFilter, setFormatFilter] = useState<string>('')
+  const [wentFirstFilter, setWentFirstFilter] = useState<boolean | null>(null)
 
   useEffect(() => {
     if (formatsStatus === 'idle') dispatch(fetchFormats())
   }, [dispatch, formatsStatus])
 
   useEffect(() => {
-    dispatch(fetchMatrix(formatFilter || null))
-  }, [dispatch, formatFilter])
+    dispatch(fetchMatrix({ formatGuid: formatFilter || null, wentFirst: wentFirstFilter }))
+  }, [dispatch, formatFilter, wentFirstFilter])
 
+  // Build legend stats (for overall WR + sorting)
   const legendStats = useMemo(() => {
     const map = new Map<string, LegendStat>()
 
@@ -42,28 +44,23 @@ export default function MatrixPage() {
         map.set(e.legenduser_guid, {
           name: e.legenduser,
           imageurl: e.legenduserimage,
-          wins: 0,
-          losses: 0,
-          draws: 0,
-          total: 0,
+          wins: 0, losses: 0, draws: 0, total: 0,
         })
       }
       const s = map.get(e.legenduser_guid)!
-      s.wins += e.wins
+      s.wins   += e.wins
       s.losses += e.losses
-      s.draws += e.draws
-      s.total += e.totalgames
+      s.draws  += e.draws
+      s.total  += e.totalgames
     })
 
+    // Ensure legends that only appear as opponents are still in the axis
     data.forEach((e) => {
       if (!map.has(e.legendopp_guid)) {
         map.set(e.legendopp_guid, {
           name: e.legendopp,
           imageurl: e.legendoppimage,
-          wins: 0,
-          losses: 0,
-          draws: 0,
-          total: 0,
+          wins: 0, losses: 0, draws: 0, total: 0,
         })
       }
     })
@@ -83,6 +80,7 @@ export default function MatrixPage() {
     })
   }, [legendStats, sortBy])
 
+  // Direct lookup grid: grid[user][opp] = cell
   const grid = useMemo(() => {
     const g = new Map<string, Map<string, (typeof data)[0]>>()
     data.forEach((e) => {
@@ -92,12 +90,30 @@ export default function MatrixPage() {
     return g
   }, [data])
 
+  // Resolve a cell: prefer direct data, fall back to inverse derivation
+  function resolveCell(rowGuid: string, colGuid: string) {
+    const direct  = grid.get(rowGuid)?.get(colGuid)
+    if (direct && direct.totalgames > 0) return direct
+
+    const inverse = grid.get(colGuid)?.get(rowGuid)
+    if (!inverse || inverse.totalgames === 0) return null
+
+    return {
+      ...inverse,
+      legenduser_guid: rowGuid,
+      legendopp_guid:  colGuid,
+      wins:    inverse.losses,
+      losses:  inverse.wins,
+      winrate: 100 - inverse.winrate,
+    }
+  }
+
   function wrColor(wr: number, total: number): string {
     if (total === 0) return '#30363d'
-    if (wr >= 0.6) return '#4ade80'
+    if (wr >= 0.6)  return '#4ade80'
     if (wr >= 0.52) return '#86efac'
-    if (wr <= 0.4) return '#f87171'
-    if (wr < 0.48) return '#fca5a5'
+    if (wr <= 0.4)  return '#f87171'
+    if (wr < 0.48)  return '#fca5a5'
     return '#8b949e'
   }
 
@@ -114,24 +130,30 @@ export default function MatrixPage() {
     ['name', 'Name'],
   ]
 
+  const INITIATIVE: [boolean | null, string][] = [
+    [null,  'All'],
+    [true,  'Went First'],
+    [false, 'Went Second'],
+  ]
+
   return (
     <div>
       <Nav />
       <main style={{ padding: '40px 24px' }}>
         <div className="card" style={{ overflowX: 'auto' }}>
-          {/* Header row */}
           <div className="matrix-controls">
             <h1 className="page-title" style={{ marginBottom: 0 }}>
               Matchup <span>Matrix</span>
             </h1>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              {/* Sort */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span className="matrix-sort-label">Sort</span>
                 <div className="matrix-sort-btns">
                   {SORTS.map(([val, label]) => (
                     <button
-                      key={val}
+                      key={String(val)}
                       className={`matrix-sort-btn${sortBy === val ? ' active' : ''}`}
                       onClick={() => setSortBy(val)}
                     >
@@ -141,6 +163,7 @@ export default function MatrixPage() {
                 </div>
               </div>
 
+              {/* Format filter */}
               <select
                 className="form-select"
                 style={{ width: 'auto', minWidth: '140px', padding: '6px 12px', fontSize: '13px' }}
@@ -149,16 +172,30 @@ export default function MatrixPage() {
               >
                 <option value="">All Formats</option>
                 {formats.map((f) => (
-                  <option key={f.guid} value={f.guid}>
-                    {f.name}
-                  </option>
+                  <option key={f.guid} value={f.guid}>{f.name}</option>
                 ))}
               </select>
+
+              {/* Initiative filter */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span className="matrix-sort-label">Initiative</span>
+                <div className="matrix-sort-btns">
+                  {INITIATIVE.map(([val, label]) => (
+                    <button
+                      key={String(val)}
+                      className={`matrix-sort-btn${wentFirstFilter === val ? ' active' : ''}`}
+                      onClick={() => setWentFirstFilter(val)}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 
           {status === 'loading' && <p className="placeholder-text">Loading matrix…</p>}
-          {status === 'error' && <div className="status-msg error">{error}</div>}
+          {status === 'error'   && <div className="status-msg error">{error}</div>}
           {status === 'success' && data.length === 0 && (
             <p className="placeholder-text">No data yet. Submit some results first.</p>
           )}
@@ -172,11 +209,7 @@ export default function MatrixPage() {
                   {sortedLegends.map(([guid, s]) => (
                     <th key={guid} className="matrix-th">
                       <div className="matrix-legend-header">
-                        <img
-                          src={s.imageurl}
-                          alt={s.name}
-                          className="matrix-legend-img"
-                        />
+                        <img src={s.imageurl} alt={s.name} className="matrix-legend-img" />
                         <span className="matrix-legend-name">{s.name}</span>
                       </div>
                     </th>
@@ -186,19 +219,14 @@ export default function MatrixPage() {
               <tbody>
                 {sortedLegends.map(([rowGuid, rowStat]) => {
                   const rowWR = rowStat.total > 0 ? rowStat.wins / rowStat.total : 0
-                  const pctOverall =
-                    rowStat.total > 0 ? (rowWR * 100).toFixed(2) : null
+                  const pctOverall = rowStat.total > 0 ? (rowWR * 100).toFixed(2) : null
 
                   return (
                     <tr key={rowGuid} className="matrix-row">
                       {/* Row label */}
                       <td className="matrix-td matrix-td-label">
                         <div className="matrix-row-label">
-                          <img
-                            src={rowStat.imageurl}
-                            alt={rowStat.name}
-                            className="matrix-legend-img"
-                          />
+                          <img src={rowStat.imageurl} alt={rowStat.name} className="matrix-legend-img" />
                           <span>{rowStat.name}</span>
                         </div>
                       </td>
@@ -210,10 +238,7 @@ export default function MatrixPage() {
                       >
                         {pctOverall !== null ? (
                           <>
-                            <span
-                              className="matrix-wr"
-                              style={{ color: wrColor(rowWR, rowStat.total) }}
-                            >
+                            <span className="matrix-wr" style={{ color: wrColor(rowWR, rowStat.total) }}>
                               {pctOverall}%
                             </span>
                             <span className="matrix-record">
@@ -229,29 +254,28 @@ export default function MatrixPage() {
                       {/* Per-matchup cells */}
                       {sortedLegends.map(([colGuid]) => {
                         if (rowGuid === colGuid) {
-                          return (
-                            <td key={colGuid} className="matrix-td matrix-td-self" />
-                          )
+                          return <td key={colGuid} className="matrix-td matrix-td-self" />
                         }
-                        const cell = grid.get(rowGuid)?.get(colGuid)
-                        if (!cell || cell.totalgames === 0) {
+
+                        const cell = resolveCell(rowGuid, colGuid)
+                        if (!cell) {
                           return (
                             <td key={colGuid} className="matrix-td">
                               <span className="matrix-empty">—</span>
                             </td>
                           )
                         }
+
                         const pct = cell.winrate.toFixed(2)
+                        const wr01 = cell.winrate / 100
+
                         return (
                           <td
                             key={colGuid}
                             className="matrix-td"
-                            style={{ background: cellBg(cell.winrate / 100, cell.totalgames) }}
+                            style={{ background: cellBg(wr01, cell.totalgames) }}
                           >
-                            <span
-                              className="matrix-wr"
-                              style={{ color: wrColor(cell.winrate / 100, cell.totalgames) }}
-                            >
+                            <span className="matrix-wr" style={{ color: wrColor(wr01, cell.totalgames) }}>
                               {pct}%
                             </span>
                             <span className="matrix-record">

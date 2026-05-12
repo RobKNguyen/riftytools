@@ -24,7 +24,6 @@ export interface GameResultFormState {
   LegendUser_GUID: string
   LegendOpp_GUID: string
   WentFirst: boolean
-  ResultType_GUID: string
   ResultFirst: string
   ResultSecond: string
   ResultThird: string
@@ -42,7 +41,6 @@ const blankForm: GameResultFormState = {
   LegendUser_GUID: '',
   LegendOpp_GUID: '',
   WentFirst: true,
-  ResultType_GUID: '',
   ResultFirst: '',
   ResultSecond: '',
   ResultThird: '',
