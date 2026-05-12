@@ -1,10 +1,10 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
+import { switchboard } from '../../services/switchboard'
 
-interface SwitchboardResponse {
+interface SubmitResponse {
   Success: boolean
   GUID?: string
   Error?: string
-  Message?: string
 }
 
 export interface GameResultPayload {
@@ -56,22 +56,23 @@ const initialState: GameResultState = {
 }
 
 export const submitGameResult = createAsyncThunk<
-  SwitchboardResponse,
+  SubmitResponse,
   GameResultPayload,
   { rejectValue: string }
 >('gameResult/submit', async (payload, { rejectWithValue }) => {
-  const res = await fetch('/switchboard', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      TaskType: 'GameResult_In',
-      Payload: payload,
-      Roles: [],
-    }),
+  const data = await switchboard<never>('GameResult_In', {
+    Format_GUID: payload.Format_GUID,
+    User_GUID: payload.User_GUID,
+    LegendUser_GUID: payload.LegendUser_GUID,
+    LegendOpp_GUID: payload.LegendOpp_GUID,
+    WentFirst: payload.WentFirst,
+    ResultType_GUID: payload.ResultType_GUID,
+    ResultFirst: payload.ResultFirst,
+    ResultSecond: payload.ResultSecond,
+    ResultThird: payload.ResultThird,
   })
-  const data: SwitchboardResponse = await res.json()
   if (!data.Success) return rejectWithValue(data.Error ?? 'Submission failed')
-  return data
+  return { Success: data.Success, GUID: data.GUID }
 })
 
 const gameResultSlice = createSlice({

@@ -1,21 +1,22 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
+import { switchboard } from '../../services/switchboard'
 
-interface SwitchboardResponse {
-  Success: boolean
-  Error?: string
-  Data?: MatrixEntry[]
-}
-
-export interface MatrixEntry {
-  LegendUser_GUID: string
-  LegendOpp_GUID: string
-  Wins: number
-  Losses: number
-  Draws: number
+export interface MatrixCell {
+  legenduser_guid: string
+  legenduser: string
+  legenduserimage: string
+  legendopp_guid: string
+  legendopp: string
+  legendoppimage: string
+  totalgames: number
+  wins: number
+  losses: number
+  draws: number
+  winrate: number
 }
 
 interface MatrixState {
-  data: MatrixEntry[]
+  data: MatrixCell[]
   status: 'idle' | 'loading' | 'success' | 'error'
   error: string | null
 }
@@ -27,16 +28,13 @@ const initialState: MatrixState = {
 }
 
 export const fetchMatrix = createAsyncThunk<
-  MatrixEntry[],
-  void,
+  MatrixCell[],
+  string | null,
   { rejectValue: string }
->('matrix/fetch', async (_, { rejectWithValue }) => {
-  const res = await fetch('/switchboard', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ TaskType: 'Matrix_Get', Payload: {}, Roles: [] }),
-  })
-  const data: SwitchboardResponse = await res.json()
+>('matrix/fetch', async (formatGuid, { rejectWithValue }) => {
+  const payload: Record<string, string> = {}
+  if (formatGuid) payload['Format_GUID'] = formatGuid
+  const data = await switchboard<MatrixCell[]>('Matrix_Out', payload)
   if (!data.Success) return rejectWithValue(data.Error ?? 'Failed to fetch matrix')
   return data.Data ?? []
 })
