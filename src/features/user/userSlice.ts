@@ -33,15 +33,15 @@ const initialState: UserState = {
 
 export const syncUser = createAsyncThunk<
   UserSyncResponse,
-  { clerkID: string; username: string },
+  { clerkID: string; username: string; email: string },
   { rejectValue: string }
->('user/sync', async ({ clerkID, username }, { rejectWithValue }) => {
+>('user/sync', async ({ clerkID, username, email }, { rejectWithValue }) => {
   const res = await fetch(SWITCHBOARD_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       TaskType: 'User_Sync',
-      Payload: { ClerkID: clerkID, Username: username },
+      Payload: { ClerkID: clerkID, Username: username, Email: email },
       Roles: [],
     }),
   })

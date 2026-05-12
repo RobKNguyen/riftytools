@@ -25,15 +25,15 @@ export default function MatrixPage() {
 
   const [sortBy, setSortBy] = useState<SortBy>('winrate')
   const [formatFilter, setFormatFilter] = useState<string>('')
-  const [wentFirstFilter, setWentFirstFilter] = useState<boolean | null>(null)
+  const [legendSearch, setLegendSearch] = useState<string>('')
 
   useEffect(() => {
     if (formatsStatus === 'idle') dispatch(fetchFormats())
   }, [dispatch, formatsStatus])
 
   useEffect(() => {
-    dispatch(fetchMatrix({ formatGuid: formatFilter || null, wentFirst: wentFirstFilter }))
-  }, [dispatch, formatFilter, wentFirstFilter])
+    dispatch(fetchMatrix({ formatGuid: formatFilter || null, wentFirst: null }))
+  }, [dispatch, formatFilter])
 
   // Build legend stats (for overall WR + sorting)
   const legendStats = useMemo(() => {
@@ -69,16 +69,19 @@ export default function MatrixPage() {
   }, [data])
 
   const sortedLegends = useMemo(() => {
-    return [...legendStats.entries()].sort(([, a], [, b]) => {
-      if (sortBy === 'name') return a.name.localeCompare(b.name)
-      if (sortBy === 'winrate') {
-        const wrA = a.total > 0 ? a.wins / a.total : -1
-        const wrB = b.total > 0 ? b.wins / b.total : -1
-        return wrB - wrA
-      }
-      return b.total - a.total
-    })
-  }, [legendStats, sortBy])
+    const query = legendSearch.toLowerCase().trim()
+    return [...legendStats.entries()]
+      .filter(([, s]) => !query || s.name.toLowerCase().includes(query))
+      .sort(([, a], [, b]) => {
+        if (sortBy === 'name') return a.name.localeCompare(b.name)
+        if (sortBy === 'winrate') {
+          const wrA = a.total > 0 ? a.wins / a.total : -1
+          const wrB = b.total > 0 ? b.wins / b.total : -1
+          return wrB - wrA
+        }
+        return b.total - a.total
+      })
+  }, [legendStats, sortBy, legendSearch])
 
   // Direct lookup grid: grid[user][opp] = cell
   const grid = useMemo(() => {
@@ -130,12 +133,6 @@ export default function MatrixPage() {
     ['name', 'Name'],
   ]
 
-  const INITIATIVE: [boolean | null, string][] = [
-    [null,  'All'],
-    [true,  'Went First'],
-    [false, 'Went Second'],
-  ]
-
   return (
     <div>
       <Nav />
@@ -176,21 +173,15 @@ export default function MatrixPage() {
                 ))}
               </select>
 
-              {/* Initiative filter */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span className="matrix-sort-label">Initiative</span>
-                <div className="matrix-sort-btns">
-                  {INITIATIVE.map(([val, label]) => (
-                    <button
-                      key={String(val)}
-                      className={`matrix-sort-btn${wentFirstFilter === val ? ' active' : ''}`}
-                      onClick={() => setWentFirstFilter(val)}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              {/* Legend search */}
+              <input
+                className="form-select"
+                type="text"
+                placeholder="Search legends…"
+                value={legendSearch}
+                onChange={(e) => setLegendSearch(e.target.value)}
+                style={{ width: 'auto', minWidth: '160px' }}
+              />
             </div>
           </div>
 

@@ -22,11 +22,8 @@ function AuthSync() {
       dispatch(
         syncUser({
           clerkID: user.id,
-          username:
-            user.username ??
-            user.firstName ??
-            user.emailAddresses[0]?.emailAddress ??
-            user.id,
+          username: user.fullName ?? user.username ?? user.id,
+          email: user.primaryEmailAddress?.emailAddress ?? '',
         }),
       )
     }
@@ -40,32 +37,34 @@ function AuthSync() {
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isSignedIn, isLoaded } = useAuth()
-  const { syncStatus, status, synced } = useSelector((state: RootState) => state.user)
+  if (!isLoaded) return null
+  if (!isSignedIn) return <Navigate to="/" replace />
+  return <>{children}</>
+}
 
-  if (!isLoaded || (isSignedIn && !synced && syncStatus === 'loading')) {
+function AppContent() {
+  const { isSignedIn, isLoaded } = useAuth()
+  const { synced, status, syncStatus } = useSelector((state: RootState) => state.user)
+
+  if (isLoaded && isSignedIn && !synced && syncStatus === 'loading') {
     return <div className="sync-loading">Syncing account…</div>
   }
 
-  if (!isSignedIn) return <Navigate to="/" replace />
-
-  if (synced && status !== null && status !== 'Approved') {
+  if (isLoaded && isSignedIn && synced && status !== 'Approved') {
     return (
       <div className="pending-screen">
         <div className="pending-card">
           <h2>Access Pending</h2>
-          <p>Your account is awaiting approval. Please check back soon.</p>
+          <p>
+            Your account is pending approval. Please wait for an admin to approve you.
+          </p>
         </div>
       </div>
     )
   }
 
-  return <>{children}</>
-}
-
-function AppRoutes() {
   return (
     <BrowserRouter>
-      <AuthSync />
       <Routes>
         <Route path="/" element={<MatrixPage />} />
         <Route
@@ -79,6 +78,15 @@ function AppRoutes() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
+  )
+}
+
+function AppRoutes() {
+  return (
+    <>
+      <AuthSync />
+      <AppContent />
+    </>
   )
 }
 
