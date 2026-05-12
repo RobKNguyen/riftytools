@@ -187,7 +187,7 @@ export default function MatrixPage() {
                 {sortedLegends.map(([rowGuid, rowStat]) => {
                   const rowWR = rowStat.total > 0 ? rowStat.wins / rowStat.total : 0
                   const pctOverall =
-                    rowStat.total > 0 ? Math.round(rowWR * 100) : null
+                    rowStat.total > 0 ? (rowWR * 100).toFixed(2) : null
 
                   return (
                     <tr key={rowGuid} className="matrix-row">
@@ -241,16 +241,16 @@ export default function MatrixPage() {
                             </td>
                           )
                         }
-                        const pct = Math.round(cell.winrate * 100)
+                        const pct = cell.winrate.toFixed(2)
                         return (
                           <td
                             key={colGuid}
                             className="matrix-td"
-                            style={{ background: cellBg(cell.winrate, cell.totalgames) }}
+                            style={{ background: cellBg(cell.winrate / 100, cell.totalgames) }}
                           >
                             <span
                               className="matrix-wr"
-                              style={{ color: wrColor(cell.winrate, cell.totalgames) }}
+                              style={{ color: wrColor(cell.winrate / 100, cell.totalgames) }}
                             >
                               {pct}%
                             </span>
