@@ -1,8 +1,11 @@
 import { Link, useLocation } from 'react-router-dom'
 import { SignInButton, SignedIn, SignedOut, UserButton } from '@clerk/clerk-react'
+import { useSelector } from 'react-redux'
+import type { RootState } from '../app/store'
 
 export default function Nav() {
   const { pathname } = useLocation()
+  const role = useSelector((state: RootState) => state.user.role)
 
   return (
     <nav className="nav">
@@ -23,6 +26,14 @@ export default function Nav() {
           >
             Submit
           </Link>
+          {role === 'Admin' && (
+            <Link
+              to="/admin"
+              className={`nav-link${pathname === '/admin' ? ' active' : ''}`}
+            >
+              Admin
+            </Link>
+          )}
           <UserButton />
         </SignedIn>
         <SignedOut>

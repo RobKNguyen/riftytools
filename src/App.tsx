@@ -7,6 +7,7 @@ import type { AppDispatch, RootState } from './app/store'
 import { syncUser, clearUser } from './features/user/userSlice'
 import MatrixPage from './pages/MatrixPage'
 import InputPage from './pages/InputPage'
+import AdminPage from './pages/AdminPage'
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string
 
@@ -42,6 +43,14 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
+function RoleRoute({ role, children }: { role: string; children: React.ReactNode }) {
+  const { isSignedIn, isLoaded } = useAuth()
+  const userRole = useSelector((state: RootState) => state.user.role)
+  if (!isLoaded) return null
+  if (!isSignedIn || userRole !== role) return <Navigate to="/" replace />
+  return <>{children}</>
+}
+
 function AppContent() {
   const { isSignedIn, isLoaded } = useAuth()
   const { synced, status, syncStatus } = useSelector((state: RootState) => state.user)
@@ -73,6 +82,14 @@ function AppContent() {
             <ProtectedRoute>
               <InputPage />
             </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <RoleRoute role="Admin">
+              <AdminPage />
+            </RoleRoute>
           }
         />
         <Route path="*" element={<Navigate to="/" replace />} />
