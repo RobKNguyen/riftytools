@@ -10,7 +10,9 @@ interface Props {
 
 export default function LegendSelect({ value, onChange, legends, placeholder }: Props) {
   const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState('')
   const ref = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -19,6 +21,17 @@ export default function LegendSelect({ value, onChange, legends, placeholder }: 
     if (open) document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
   }, [open])
+
+  useEffect(() => {
+    if (open) {
+      setQuery('')
+      setTimeout(() => inputRef.current?.focus(), 0)
+    }
+  }, [open])
+
+  const filtered = query.trim()
+    ? legends.filter((l) => l.name.toLowerCase().includes(query.toLowerCase()))
+    : legends
 
   const selected = legends.find((l) => l.guid === value)
 
@@ -42,22 +55,34 @@ export default function LegendSelect({ value, onChange, legends, placeholder }: 
 
       {open && (
         <div className="legend-dropdown">
+          <input
+            ref={inputRef}
+            type="text"
+            className="legend-search"
+            placeholder="Search legends…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
           <div className="legend-grid">
-            {legends.map((l) => (
-              <button
-                key={l.guid}
-                type="button"
-                className={`legend-tile${value === l.guid ? ' selected' : ''}`}
-                title={l.name}
-                onClick={() => {
-                  onChange(l.guid)
-                  setOpen(false)
-                }}
-              >
-                <img src={l.imageurl} alt={l.name} className="legend-tile-img" />
-                <span className="legend-tile-name">{l.name}</span>
-              </button>
-            ))}
+            {filtered.length === 0 ? (
+              <p className="legend-no-results">No results</p>
+            ) : (
+              filtered.map((l) => (
+                <button
+                  key={l.guid}
+                  type="button"
+                  className={`legend-tile${value === l.guid ? ' selected' : ''}`}
+                  title={l.name}
+                  onClick={() => {
+                    onChange(l.guid)
+                    setOpen(false)
+                  }}
+                >
+                  <img src={l.imageurl} alt={l.name} className="legend-tile-img" />
+                  <span className="legend-tile-name">{l.name}</span>
+                </button>
+              ))
+            )}
           </div>
         </div>
       )}

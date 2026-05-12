@@ -93,12 +93,12 @@ export default function MatrixPage() {
   }, [data])
 
   function wrColor(wr: number, total: number): string {
-    if (total === 0) return '#334155'
+    if (total === 0) return '#30363d'
     if (wr >= 0.6) return '#4ade80'
     if (wr >= 0.52) return '#86efac'
     if (wr <= 0.4) return '#f87171'
     if (wr < 0.48) return '#fca5a5'
-    return '#94a3b8'
+    return '#8b949e'
   }
 
   function cellBg(wr: number, total: number): string {
