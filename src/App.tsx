@@ -12,6 +12,7 @@ import AdminPage from './pages/AdminPage'
 import LogPage from './pages/LogPage'
 import ProfilePage from './pages/ProfilePage'
 import AnalyticsPage from './pages/AnalyticsPage'
+import Footer from './components/Footer'
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string
 
@@ -133,6 +134,7 @@ function AppRoutes() {
     <>
       <AuthSync />
       <AppContent />
+      <Footer />
       <Toaster position="bottom-right" toastOptions={{ duration: 3000 }} />
     </>
   )

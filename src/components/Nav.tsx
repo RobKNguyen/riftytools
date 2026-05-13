@@ -10,6 +10,7 @@ export default function Nav() {
   return (
     <nav className="nav">
       <Link to="/" className="nav-logo">
+        <img src="/riftyelite.ico" alt="RiftyElites" className="nav-logo-icon" />
         Rifty<span>Elites</span>
       </Link>
       <div className="nav-links">

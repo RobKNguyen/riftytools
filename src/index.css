@@ -1479,3 +1479,28 @@ body {
   padding: 20px 24px 24px;
   overflow-y: auto;
 }
+
+/* ── Nav logo icon ────────────────────────────────────── */
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-logo-icon {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+/* ── Footer ───────────────────────────────────────────── */
+
+.site-footer {
+  border-top: 1px solid #21262d;
+  padding: 20px 24px;
+  text-align: center;
+  color: #484f58;
+  font-size: 12px;
+}
