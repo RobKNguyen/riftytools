@@ -65,9 +65,9 @@ function ProfileRedirect() {
 
 function AppContent() {
   const { isSignedIn, isLoaded } = useAuth()
-  const { synced, status } = useSelector((state: RootState) => state.user)
+  const { synced, status, syncStatus } = useSelector((state: RootState) => state.user)
 
-  if (isLoaded && isSignedIn && !synced) {
+  if (isLoaded && isSignedIn && !synced && syncStatus !== 'error') {
     return <div className="sync-loading">Syncing account…</div>
   }
 
@@ -104,8 +104,22 @@ function AppContent() {
             </RoleRoute>
           }
         />
-        <Route path="/log" element={<LogPage />} />
-        <Route path="/analytics" element={<AnalyticsPage />} />
+        <Route
+          path="/log"
+          element={
+            <ProtectedRoute>
+              <LogPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/analytics"
+          element={
+            <ProtectedRoute>
+              <AnalyticsPage />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/profile/me" element={<ProfileRedirect />} />
         <Route path="/profile/:userGuid" element={<ProfilePage />} />
         <Route path="*" element={<Navigate to="/" replace />} />

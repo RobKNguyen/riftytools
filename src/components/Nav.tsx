@@ -16,13 +16,13 @@ export default function Nav() {
         <Link to="/" className={`nav-link${pathname === '/' ? ' active' : ''}`}>
           Matrix
         </Link>
-        <Link to="/log" className={`nav-link${pathname === '/log' ? ' active' : ''}`}>
-          Log
-        </Link>
-        <Link to="/analytics" className={`nav-link${pathname === '/analytics' ? ' active' : ''}`}>
-          Analytics
-        </Link>
         <SignedIn>
+          <Link to="/log" className={`nav-link${pathname === '/log' ? ' active' : ''}`}>
+            Feed
+          </Link>
+          <Link to="/analytics" className={`nav-link${pathname === '/analytics' ? ' active' : ''}`}>
+            Analytics
+          </Link>
           <Link
             to="/input"
             className={`nav-link${pathname === '/input' ? ' active' : ''}`}
