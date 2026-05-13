@@ -18,6 +18,7 @@ export interface MatrixCell {
 export interface MatrixFilters {
   formatGuid: string | null
   wentFirst: boolean | null
+  userGuid: string | null
 }
 
 interface MatrixState {
@@ -36,12 +37,13 @@ export const fetchMatrix = createAsyncThunk<
   MatrixCell[],
   MatrixFilters,
   { rejectValue: string; state: { user: { role: string | null } } }
->('matrix/fetch', async ({ formatGuid, wentFirst }, { rejectWithValue, getState }) => {
+>('matrix/fetch', async ({ formatGuid, wentFirst, userGuid }, { rejectWithValue, getState }) => {
   const role = getState().user.role
   const roles = role ? [role] : ['Player']
   const payload: Record<string, string | boolean> = {}
   if (formatGuid) payload['Format_GUID'] = formatGuid
   if (wentFirst !== null) payload['WentFirst'] = wentFirst
+  if (userGuid) payload['User_GUID'] = userGuid
   const data = await switchboard<MatrixCell[]>('Matrix_Out', payload, roles)
   if (!data.Success) return rejectWithValue(data.Error ?? 'Failed to fetch matrix')
   return data.Data ?? []

@@ -1,9 +1,11 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
+import toast from 'react-hot-toast'
 import { useDispatch, useSelector } from 'react-redux'
 import type { AppDispatch, RootState } from '../app/store'
 import { updateField, resetForm, submitGameResult } from '../features/gameResult/gameResultSlice'
 import { fetchLegends } from '../features/legends/legendsSlice'
 import { fetchFormats } from '../features/formats/formatsSlice'
+import { fetchUsers } from '../features/users/usersSlice'
 import {
   RESULT_TYPES,
   WIN_GUID,
@@ -13,6 +15,7 @@ import {
 } from '../constants'
 import Nav from '../components/Nav'
 import LegendSelect from '../components/LegendSelect'
+import UserSelect from '../components/UserSelect'
 
 function resultLabel(guid: string): string {
   if (guid === WIN_GUID)  return 'Win'
@@ -39,12 +42,16 @@ export default function InputPage() {
   const { data: formats, status: formatsStatus } = useSelector(
     (state: RootState) => state.formats
   )
+  const { data: users, status: usersStatus } = useSelector(
+    (state: RootState) => state.users
+  )
   const userGuid = useSelector((state: RootState) => state.user.guid)
 
   useEffect(() => {
     if (legendsStatus === 'idle') dispatch(fetchLegends())
     if (formatsStatus === 'idle') dispatch(fetchFormats())
-  }, [dispatch, legendsStatus, formatsStatus])
+    if (usersStatus === 'idle') dispatch(fetchUsers())
+  }, [dispatch, legendsStatus, formatsStatus, usersStatus])
 
   const selectedFormat = formats.find((f) => f.guid === form.Format_GUID)
   const maxGames = selectedFormat?.maxgames ?? 0
@@ -64,6 +71,18 @@ export default function InputPage() {
     (maxGames < 2 || form.ResultSecond !== '') &&
     matchResult !== ''
 
+  const prevStatus = useRef(status)
+  useEffect(() => {
+    if (prevStatus.current === 'loading' && status === 'success') {
+      toast.success('Match submitted!')
+      dispatch(resetForm())
+    }
+    if (prevStatus.current === 'loading' && status === 'error') {
+      toast.error('Something went wrong. Please try again.')
+    }
+    prevStatus.current = status
+  }, [status, dispatch])
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!isValid) return
@@ -78,6 +97,7 @@ export default function InputPage() {
         ResultFirst: form.ResultFirst,
         ResultSecond: maxGames >= 2 && form.ResultSecond !== '' ? form.ResultSecond : null,
         ResultThird: maxGames >= 3 && form.ResultThird !== '' ? form.ResultThird : null,
+        OppUser_GUID: form.OppUser_GUID || undefined,
       })
     )
   }
@@ -145,6 +165,22 @@ export default function InputPage() {
                     />
                   </div>
                 </div>
+              </div>
+
+              {/* Opponent user (optional) */}
+              <div className="form-group">
+                <label className="form-label">
+                  Opponent{' '}
+                  <span style={{ color: '#484f58', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>
+                    — optional
+                  </span>
+                </label>
+                <UserSelect
+                  value={form.OppUser_GUID}
+                  onChange={(guid) => dispatch(updateField({ OppUser_GUID: guid }))}
+                  users={users}
+                  placeholder="Select opponent…"
+                />
               </div>
 
               {/* Initiative */}
@@ -265,22 +301,6 @@ export default function InputPage() {
                 {status === 'loading' ? 'Submitting…' : 'Submit Result'}
               </button>
 
-              {status === 'success' && (
-                <div className="status-msg success">
-                  <span>Result submitted!{lastGUID ? ` GUID: ${lastGUID}` : ''}</span>
-                  <button
-                    type="button"
-                    className="reset-link"
-                    onClick={() => dispatch(resetForm())}
-                  >
-                    Submit another
-                  </button>
-                </div>
-              )}
-
-              {status === 'error' && (
-                <div className="status-msg error">{error}</div>
-              )}
             </form>
           )}
         </div>

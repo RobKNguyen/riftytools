@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import type { AppDispatch, RootState } from '../app/store'
 import { fetchMatrix } from '../features/matrix/matrixSlice'
 import { fetchFormats } from '../features/formats/formatsSlice'
+import { fetchUsers } from '../features/users/usersSlice'
 import Nav from '../components/Nav'
 
 type SortBy = 'winrate' | 'games' | 'name'
@@ -22,9 +23,13 @@ export default function MatrixPage() {
   const { data: formats, status: formatsStatus } = useSelector(
     (state: RootState) => state.formats
   )
+  const { data: users, status: usersStatus } = useSelector(
+    (state: RootState) => state.users
+  )
 
   const [sortBy, setSortBy] = useState<SortBy>('winrate')
   const [formatFilter, setFormatFilter] = useState<string>('')
+  const [playerFilter, setPlayerFilter] = useState<string>('')
   const [legendSearch, setLegendSearch] = useState<string>('')
 
   useEffect(() => {
@@ -32,8 +37,16 @@ export default function MatrixPage() {
   }, [dispatch, formatsStatus])
 
   useEffect(() => {
-    dispatch(fetchMatrix({ formatGuid: formatFilter || null, wentFirst: null }))
-  }, [dispatch, formatFilter])
+    if (usersStatus === 'idle') dispatch(fetchUsers())
+  }, [dispatch, usersStatus])
+
+  useEffect(() => {
+    dispatch(fetchMatrix({
+      formatGuid: formatFilter || null,
+      wentFirst: null,
+      userGuid: playerFilter || null,
+    }))
+  }, [dispatch, formatFilter, playerFilter])
 
   // Build legend stats (for overall WR + sorting)
   const legendStats = useMemo(() => {
@@ -170,6 +183,19 @@ export default function MatrixPage() {
                 <option value="">All Formats</option>
                 {formats.map((f) => (
                   <option key={f.guid} value={f.guid}>{f.name}</option>
+                ))}
+              </select>
+
+              {/* Player filter */}
+              <select
+                className="form-select"
+                style={{ width: 'auto', minWidth: '150px', padding: '6px 12px', fontSize: '13px' }}
+                value={playerFilter}
+                onChange={(e) => setPlayerFilter(e.target.value)}
+              >
+                <option value="">All Players</option>
+                {users.filter((u) => u.status === 'Approved').map((u) => (
+                  <option key={u.guid} value={u.guid}>{u.username}</option>
                 ))}
               </select>
 

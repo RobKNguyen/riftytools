@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
+import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit'
 import { SWITCHBOARD_URL } from '../../services/switchboard'
 
 export interface ProfileUserInfo {
@@ -28,13 +28,25 @@ export interface TopLegend {
 }
 
 export interface RecentResult {
+  guid: string
+  user_guid: string
   legenduser: string
   legenduserimage: string
   legendopp: string
   legendoppimage: string
   overallresult: string
   format: string
+  wentfirst: boolean
+  game1: string
+  game2: string | null
+  game3: string | null
   playedon: string
+  format_guid?: string
+  legenduser_guid?: string
+  legendopp_guid?: string
+  resultfirst?: string
+  resultsecond?: string | null
+  resultthird?: string | null
 }
 
 export interface ProfileData {
@@ -89,7 +101,11 @@ export const fetchProfile = createAsyncThunk<
       userinfo: raw.UserInfo,
       stats: raw.Stats,
       toplegends: raw.TopLegends ?? [],
-      recentresults: raw.RecentResults ?? [],
+      recentresults: (raw.RecentResults ?? []).map((r: any) => ({
+        ...r,
+        guid: r.guid || r.GUID || '',
+        user_guid: r.user_guid || r.User_GUID || '',
+      })),
     },
   }
 })
@@ -97,7 +113,15 @@ export const fetchProfile = createAsyncThunk<
 const profileSlice = createSlice({
   name: 'profile',
   initialState,
-  reducers: {},
+  reducers: {
+    removeRecentResult(state, action: PayloadAction<string>) {
+      if (state.data) {
+        state.data.recentresults = state.data.recentresults.filter(
+          (r) => r.guid !== action.payload,
+        )
+      }
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchProfile.pending, (state, action) => {
@@ -117,4 +141,5 @@ const profileSlice = createSlice({
   },
 })
 
+export const { removeRecentResult } = profileSlice.actions
 export default profileSlice.reducer

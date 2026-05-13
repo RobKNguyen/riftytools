@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { Toaster } from 'react-hot-toast'
 import { ClerkProvider, useAuth, useUser } from '@clerk/clerk-react'
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Provider, useDispatch, useSelector } from 'react-redux'
@@ -63,9 +64,9 @@ function ProfileRedirect() {
 
 function AppContent() {
   const { isSignedIn, isLoaded } = useAuth()
-  const { synced, status, syncStatus } = useSelector((state: RootState) => state.user)
+  const { synced, status } = useSelector((state: RootState) => state.user)
 
-  if (isLoaded && isSignedIn && !synced && syncStatus === 'loading') {
+  if (isLoaded && isSignedIn && !synced) {
     return <div className="sync-loading">Syncing account…</div>
   }
 
@@ -116,6 +117,7 @@ function AppRoutes() {
     <>
       <AuthSync />
       <AppContent />
+      <Toaster position="bottom-right" toastOptions={{ duration: 3000 }} />
     </>
   )
 }

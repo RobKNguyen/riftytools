@@ -1,10 +1,12 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
+import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit'
 import { SWITCHBOARD_URL } from '../../services/switchboard'
 
 export interface GameResult {
   guid: string
   username: string
   user_guid: string
+  oppusername: string | null
+  oppuser_guid: string | null
   legenduser: string
   legenduserimage: string
   legendopp: string
@@ -17,6 +19,12 @@ export interface GameResult {
   game3: string | null
   playedon: string
   createdon: string
+  format_guid?: string
+  legenduser_guid?: string
+  legendopp_guid?: string
+  resultfirst?: string
+  resultsecond?: string | null
+  resultthird?: string | null
 }
 
 interface LogState {
@@ -25,6 +33,8 @@ interface LogState {
   hasMore: boolean
   status: 'idle' | 'loading' | 'loadingMore' | 'success' | 'error'
   error: string | null
+  userGuidFilter: string | null
+  myGames: boolean
 }
 
 const LIMIT = 50
@@ -35,23 +45,23 @@ const initialState: LogState = {
   hasMore: true,
   status: 'idle',
   error: null,
+  userGuidFilter: null,
+  myGames: false,
 }
 
 export const fetchGameResults = createAsyncThunk<
   { results: GameResult[]; offset: number },
-  { offset: number },
+  { offset: number; userGuidFilter?: string | null },
   { rejectValue: string; state: { user: { role: string | null } } }
->('log/fetch', async ({ offset }, { rejectWithValue, getState }) => {
+>('log/fetch', async ({ offset, userGuidFilter }, { rejectWithValue, getState }) => {
   const role = getState().user.role
   const roles = role ? [role] : ['Player']
+  const payload: Record<string, string | number> = { Offset: offset, Limit: LIMIT }
+  if (userGuidFilter) payload['User_GUID'] = userGuidFilter
   const res = await fetch(SWITCHBOARD_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      TaskType: 'GameResults_Out',
-      Payload: { Offset: offset, Limit: LIMIT },
-      Roles: roles,
-    }),
+    body: JSON.stringify({ TaskType: 'GameResults_Out', Payload: payload, Roles: roles }),
   })
   const data = (await res.json()) as { Success: boolean; Error?: string; Data?: GameResult[] }
   if (!data.Success) return rejectWithValue(data.Error ?? 'Failed to fetch results')
@@ -68,6 +78,21 @@ const logSlice = createSlice({
       state.hasMore = true
       state.status = 'idle'
       state.error = null
+      state.userGuidFilter = null
+      state.myGames = false
+    },
+    removeResult(state, action: PayloadAction<string>) {
+      state.items = state.items.filter((i) => i.guid !== action.payload)
+    },
+    setFilter(
+      state,
+      action: PayloadAction<{ userGuidFilter: string | null; myGames: boolean }>,
+    ) {
+      state.userGuidFilter = action.payload.userGuidFilter
+      state.myGames = action.payload.myGames
+      state.items = []
+      state.offset = 0
+      state.hasMore = true
     },
   },
   extraReducers: (builder) => {
@@ -94,5 +119,5 @@ const logSlice = createSlice({
   },
 })
 
-export const { resetLog } = logSlice.actions
+export const { resetLog, removeResult, setFilter } = logSlice.actions
 export default logSlice.reducer

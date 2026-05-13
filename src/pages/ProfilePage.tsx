@@ -1,9 +1,14 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
+import toast from 'react-hot-toast'
 import type { AppDispatch, RootState } from '../app/store'
-import { fetchProfile } from '../features/profile/profileSlice'
+import { fetchProfile, removeRecentResult } from '../features/profile/profileSlice'
 import type { TopLegend, RecentResult } from '../features/profile/profileSlice'
+import { switchboard } from '../services/switchboard'
+import ConfirmDialog from '../components/ConfirmDialog'
+import EditResultModal from '../components/EditResultModal'
+import type { EditableResult } from '../components/EditResultModal'
 import Nav from '../components/Nav'
 
 function roleBadgeClass(role: string): string {
@@ -35,7 +40,17 @@ function LegendCard({ l }: { l: TopLegend }) {
   )
 }
 
-function RecentRow({ r }: { r: RecentResult }) {
+function RecentRow({
+  r,
+  isOwn,
+  onEdit,
+  onDelete,
+}: {
+  r: RecentResult
+  isOwn: boolean
+  onEdit: (r: EditableResult) => void
+  onDelete: (guid: string) => void
+}) {
   return (
     <div className="recent-item">
       <div className="recent-legends">
@@ -49,6 +64,31 @@ function RecentRow({ r }: { r: RecentResult }) {
         <span className="recent-format">{r.format}</span>
       </div>
       <span className={`log-badge ${resultClass(r.overallresult)}`}>{r.overallresult}</span>
+      {isOwn && (
+        <div className="result-actions">
+          <button
+            className="result-action-btn edit"
+            title="Edit"
+            onClick={() => onEdit({
+              guid: r.guid,
+              format_guid: r.format_guid ?? '',
+              legenduser_guid: r.legenduser_guid ?? '',
+              legendopp_guid: r.legendopp_guid ?? '',
+              wentfirst: r.wentfirst,
+              resultfirst: r.resultfirst ?? '',
+              resultsecond: r.resultsecond ?? null,
+              resultthird: r.resultthird ?? null,
+              format: r.format,
+              legenduser: r.legenduser,
+              legendopp: r.legendopp,
+              game1: r.game1,
+              game2: r.game2,
+              game3: r.game3,
+            })}
+          >✎</button>
+          <button className="result-action-btn delete" title="Delete" onClick={() => onDelete(r.guid)}>✕</button>
+        </div>
+      )}
     </div>
   )
 }
@@ -56,15 +96,38 @@ function RecentRow({ r }: { r: RecentResult }) {
 export default function ProfilePage() {
   const { userGuid } = useParams<{ userGuid: string }>()
   const dispatch = useDispatch<AppDispatch>()
-  const { data, status, error, currentGuid } = useSelector(
-    (state: RootState) => state.profile,
-  )
+  const { data, status, error, currentGuid } = useSelector((state: RootState) => state.profile)
+  const currentUserGuid = useSelector((state: RootState) => state.user.guid)
+  const currentUserRole = useSelector((state: RootState) => state.user.role)
+
+  const [deletingResult, setDeletingResult] = useState<{ guid: string } | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [editingResult, setEditingResult] = useState<EditableResult | null>(null)
 
   useEffect(() => {
     if (userGuid && userGuid !== currentGuid) {
       dispatch(fetchProfile(userGuid))
     }
   }, [dispatch, userGuid, currentGuid])
+
+  async function handleDelete() {
+    if (!deletingResult || !currentUserGuid) return
+    setIsDeleting(true)
+    const res = await switchboard(
+      'GameResult_Del',
+      { GUID: deletingResult.guid, User_GUID: currentUserGuid },
+      [currentUserRole ?? 'Player'],
+    )
+    setIsDeleting(false)
+    if (res.Success) {
+      dispatch(removeRecentResult(deletingResult.guid))
+      setDeletingResult(null)
+      toast.success('Result deleted')
+    } else {
+      setDeletingResult(null)
+      toast.error('Could not delete result')
+    }
+  }
 
   return (
     <div>
@@ -77,7 +140,6 @@ export default function ProfilePage() {
 
           {status === 'success' && data && (
             <>
-              {/* Header */}
               <div className="card profile-header-card">
                 <div className="profile-header-row">
                   <div>
@@ -90,7 +152,6 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* Stats bar */}
               <div className="card stats-bar">
                 {[
                   { label: 'Games',    value: data.stats.totalgames },
@@ -106,7 +167,6 @@ export default function ProfilePage() {
                 ))}
               </div>
 
-              {/* Top Legends */}
               {data.toplegends.length > 0 && (
                 <div className="card">
                   <h2 className="section-heading">Top Legends</h2>
@@ -118,13 +178,18 @@ export default function ProfilePage() {
                 </div>
               )}
 
-              {/* Recent Results */}
               {data.recentresults.length > 0 && (
                 <div className="card">
                   <h2 className="section-heading">Recent Results</h2>
                   <div className="recent-results-list">
-                    {data.recentresults.slice(0, 10).map((r, i) => (
-                      <RecentRow key={i} r={r} />
+                    {data.recentresults.slice(0, 10).map((r) => (
+                      <RecentRow
+                        key={r.guid}
+                        r={r}
+                        isOwn={userGuid === currentUserGuid || r.user_guid === currentUserGuid}
+                        onEdit={setEditingResult}
+                        onDelete={(guid) => setDeletingResult({ guid })}
+                      />
                     ))}
                   </div>
                 </div>
@@ -133,6 +198,24 @@ export default function ProfilePage() {
           )}
         </div>
       </main>
+
+      {deletingResult && (
+        <ConfirmDialog
+          message="Are you sure you want to delete this result?"
+          confirmLabel="Delete"
+          loading={isDeleting}
+          onConfirm={handleDelete}
+          onCancel={() => setDeletingResult(null)}
+        />
+      )}
+
+      {editingResult && (
+        <EditResultModal
+          result={editingResult}
+          onClose={() => setEditingResult(null)}
+          onSuccess={() => userGuid && dispatch(fetchProfile(userGuid))}
+        />
+      )}
     </div>
   )
 }
