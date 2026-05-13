@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(npm install *)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(Get-ChildItem -Recurse \"c:\\\\Users\\\\robin\\\\Home\\\\Developer\\\\Projects\\\\RiftyElites\\\\riftytools\\\\src\" -Filter \"*selector*\" -ErrorAction SilentlyContinue)"
     ]
   }
 }

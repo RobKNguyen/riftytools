@@ -16,6 +16,35 @@ body {
   min-height: 100vh;
 }
 
+/* ── Scrollbars ──────────────────────────────────────── */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #30363d transparent;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #30363d;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #484f58;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 /* ── Nav ─────────────────────────────────────────────── */
 
 .nav {

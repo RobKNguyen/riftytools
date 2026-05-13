@@ -282,8 +282,15 @@ export default function MatrixPage() {
               </thead>
               <tbody>
                 {rowLegends.map(([rowGuid, rowStat]) => {
-                  const rowWR = rowStat.total > 0 ? rowStat.wins / rowStat.total : 0
-                  const pctOverall = rowStat.total > 0 ? (rowWR * 100).toFixed(2) : null
+                  let overallWins = 0, overallLosses = 0, overallDraws = 0
+                  colLegends.forEach(([colGuid]) => {
+                    if (colGuid === rowGuid) return
+                    const cell = resolveCell(rowGuid, colGuid)
+                    if (cell) { overallWins += cell.wins; overallLosses += cell.losses; overallDraws += cell.draws }
+                  })
+                  const overallGames = overallWins + overallLosses + overallDraws
+                  const rowWR = overallGames > 0 ? overallWins / overallGames : 0
+                  const pctOverall = overallGames > 0 ? (rowWR * 100).toFixed(2) : null
                   return (
                     <tr key={rowGuid} className="matrix-row">
                       <td className="matrix-td matrix-td-label">
@@ -292,11 +299,11 @@ export default function MatrixPage() {
                           <span>{rowStat.name}</span>
                         </div>
                       </td>
-                      <td className="matrix-td matrix-td-overall" style={{ background: cellBg(rowWR, rowStat.total) }}>
+                      <td className="matrix-td matrix-td-overall" style={{ background: cellBg(rowWR, overallGames) }}>
                         {pctOverall !== null ? (
                           <>
-                            <span className="matrix-wr" style={{ color: wrColor(rowWR, rowStat.total) }}>{pctOverall}%</span>
-                            <span className="matrix-record">{rowStat.wins}W {rowStat.losses}L{rowStat.draws > 0 ? ` ${rowStat.draws}D` : ''}</span>
+                            <span className="matrix-wr" style={{ color: wrColor(rowWR, overallGames) }}>{pctOverall}%</span>
+                            <span className="matrix-record">{overallWins}W {overallLosses}L{overallDraws > 0 ? ` ${overallDraws}D` : ''}</span>
                           </>
                         ) : (
                           <span className="matrix-empty">—</span>
@@ -306,11 +313,12 @@ export default function MatrixPage() {
                         if (rowGuid === colGuid) return <td key={colGuid} className="matrix-td matrix-td-self" />
                         const cell = resolveCell(rowGuid, colGuid)
                         if (!cell) return <td key={colGuid} className="matrix-td"><span className="matrix-empty">—</span></td>
-                        const pct = cell.winrate.toFixed(2)
-                        const wr01 = cell.winrate / 100
+                        const cellGames = cell.wins + cell.losses + cell.draws
+                        const wr01 = cellGames > 0 ? cell.wins / cellGames : 0
+                        const pct = (wr01 * 100).toFixed(2)
                         return (
-                          <td key={colGuid} className="matrix-td" style={{ background: cellBg(wr01, cell.totalgames) }}>
-                            <span className="matrix-wr" style={{ color: wrColor(wr01, cell.totalgames) }}>{pct}%</span>
+                          <td key={colGuid} className="matrix-td" style={{ background: cellBg(wr01, cellGames) }}>
+                            <span className="matrix-wr" style={{ color: wrColor(wr01, cellGames) }}>{pct}%</span>
                             <span className="matrix-record">{cell.wins}W {cell.losses}L{cell.draws > 0 ? ` ${cell.draws}D` : ''}</span>
                           </td>
                         )
