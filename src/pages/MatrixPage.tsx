@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import type { AppDispatch, RootState } from '../app/store'
 import { fetchMatrix } from '../features/matrix/matrixSlice'
@@ -17,20 +17,83 @@ interface LegendStat {
   total: number
 }
 
+function LegendMultiSelect({
+  label,
+  options,
+  selected,
+  onChange,
+}: {
+  label: string
+  options: [string, LegendStat][]
+  selected: string[]
+  onChange: (guids: string[]) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function onDown(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [])
+
+  function toggle(guid: string) {
+    onChange(selected.includes(guid) ? selected.filter(g => g !== guid) : [...selected, guid])
+  }
+
+  const btnLabel = selected.length === 0
+    ? label
+    : selected.length === 1
+      ? options.find(([g]) => g === selected[0])?.[1].name ?? label
+      : `${selected.length} selected`
+
+  return (
+    <div className="legend-ms" ref={ref}>
+      <button
+        type="button"
+        className={`legend-ms-btn${selected.length > 0 ? ' has-selection' : ''}`}
+        onClick={() => setOpen(o => !o)}
+      >
+        {selected.length > 0 && <span className="legend-ms-badge">{selected.length}</span>}
+        <span>{btnLabel}</span>
+        <span className="legend-ms-arrow">{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <div className="legend-ms-dropdown">
+          {selected.length > 0 && (
+            <button type="button" className="legend-ms-clear" onClick={() => onChange([])}>
+              Clear all
+            </button>
+          )}
+          <div className="legend-ms-list">
+            {options.map(([guid, stat]) => (
+              <label key={guid} className={`legend-ms-option${selected.includes(guid) ? ' checked' : ''}`}>
+                <input type="checkbox" checked={selected.includes(guid)} onChange={() => toggle(guid)} />
+                <img src={stat.imageurl} alt={stat.name} className="legend-ms-img" />
+                <span>{stat.name}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function MatrixPage() {
   const dispatch = useDispatch<AppDispatch>()
   const { data, status, error } = useSelector((state: RootState) => state.matrix)
-  const { data: formats, status: formatsStatus } = useSelector(
-    (state: RootState) => state.formats
-  )
-  const { data: users, status: usersStatus } = useSelector(
-    (state: RootState) => state.users
-  )
+  const { data: formats, status: formatsStatus } = useSelector((state: RootState) => state.formats)
+  const { data: users, status: usersStatus } = useSelector((state: RootState) => state.users)
 
   const [sortBy, setSortBy] = useState<SortBy>('winrate')
   const [formatFilter, setFormatFilter] = useState<string>('')
   const [playerFilter, setPlayerFilter] = useState<string>('')
   const [legendSearch, setLegendSearch] = useState<string>('')
+  const [playingFilter, setPlayingFilter] = useState<string[]>([])
+  const [againstFilter, setAgainstFilter] = useState<string[]>([])
 
   useEffect(() => {
     if (formatsStatus === 'idle') dispatch(fetchFormats())
@@ -41,43 +104,23 @@ export default function MatrixPage() {
   }, [dispatch, usersStatus])
 
   useEffect(() => {
-    dispatch(fetchMatrix({
-      formatGuid: formatFilter || null,
-      wentFirst: null,
-      userGuid: playerFilter || null,
-    }))
+    dispatch(fetchMatrix({ formatGuid: formatFilter || null, wentFirst: null, userGuid: playerFilter || null }))
   }, [dispatch, formatFilter, playerFilter])
 
-  // Build legend stats (for overall WR + sorting)
   const legendStats = useMemo(() => {
     const map = new Map<string, LegendStat>()
-
     data.forEach((e) => {
       if (!map.has(e.legenduser_guid)) {
-        map.set(e.legenduser_guid, {
-          name: e.legenduser,
-          imageurl: e.legenduserimage,
-          wins: 0, losses: 0, draws: 0, total: 0,
-        })
+        map.set(e.legenduser_guid, { name: e.legenduser, imageurl: e.legenduserimage, wins: 0, losses: 0, draws: 0, total: 0 })
       }
       const s = map.get(e.legenduser_guid)!
-      s.wins   += e.wins
-      s.losses += e.losses
-      s.draws  += e.draws
-      s.total  += e.totalgames
+      s.wins += e.wins; s.losses += e.losses; s.draws += e.draws; s.total += e.totalgames
     })
-
-    // Ensure legends that only appear as opponents are still in the axis
     data.forEach((e) => {
       if (!map.has(e.legendopp_guid)) {
-        map.set(e.legendopp_guid, {
-          name: e.legendopp,
-          imageurl: e.legendoppimage,
-          wins: 0, losses: 0, draws: 0, total: 0,
-        })
+        map.set(e.legendopp_guid, { name: e.legendopp, imageurl: e.legendoppimage, wins: 0, losses: 0, draws: 0, total: 0 })
       }
     })
-
     return map
   }, [data])
 
@@ -96,7 +139,21 @@ export default function MatrixPage() {
       })
   }, [legendStats, sortBy, legendSearch])
 
-  // Direct lookup grid: grid[user][opp] = cell
+  const legendOptions = useMemo(
+    () => [...legendStats.entries()].sort(([, a], [, b]) => a.name.localeCompare(b.name)),
+    [legendStats],
+  )
+
+  const rowLegends = useMemo(
+    () => playingFilter.length > 0 ? sortedLegends.filter(([g]) => playingFilter.includes(g)) : sortedLegends,
+    [sortedLegends, playingFilter],
+  )
+
+  const colLegends = useMemo(
+    () => againstFilter.length > 0 ? sortedLegends.filter(([g]) => againstFilter.includes(g)) : sortedLegends,
+    [sortedLegends, againstFilter],
+  )
+
   const grid = useMemo(() => {
     const g = new Map<string, Map<string, (typeof data)[0]>>()
     data.forEach((e) => {
@@ -106,25 +163,15 @@ export default function MatrixPage() {
     return g
   }, [data])
 
-  // Resolve a cell: prefer direct data, fall back to inverse derivation
   function resolveCell(rowGuid: string, colGuid: string) {
-    const direct  = grid.get(rowGuid)?.get(colGuid)
+    const direct = grid.get(rowGuid)?.get(colGuid)
     if (direct && direct.totalgames > 0) return direct
-
     const inverse = grid.get(colGuid)?.get(rowGuid)
     if (!inverse || inverse.totalgames === 0) return null
-
-    return {
-      ...inverse,
-      legenduser_guid: rowGuid,
-      legendopp_guid:  colGuid,
-      wins:    inverse.losses,
-      losses:  inverse.wins,
-      winrate: 100 - inverse.winrate,
-    }
+    return { ...inverse, legenduser_guid: rowGuid, legendopp_guid: colGuid, wins: inverse.losses, losses: inverse.wins, winrate: 100 - inverse.winrate }
   }
 
-  function wrColor(wr: number, total: number): string {
+  function wrColor(wr: number, total: number) {
     if (total === 0) return '#30363d'
     if (wr >= 0.6)  return '#4ade80'
     if (wr >= 0.52) return '#86efac'
@@ -133,18 +180,14 @@ export default function MatrixPage() {
     return '#8b949e'
   }
 
-  function cellBg(wr: number, total: number): string {
+  function cellBg(wr: number, total: number) {
     if (total === 0) return 'transparent'
     if (wr >= 0.55) return 'rgba(34,197,94,0.07)'
     if (wr <= 0.45) return 'rgba(239,68,68,0.07)'
     return 'transparent'
   }
 
-  const SORTS: [SortBy, string][] = [
-    ['winrate', 'Win Rate'],
-    ['games', 'Games'],
-    ['name', 'Name'],
-  ]
+  const SORTS: [SortBy, string][] = [['winrate', 'Win Rate'], ['games', 'Games'], ['name', 'Name']]
 
   return (
     <div>
@@ -157,56 +200,60 @@ export default function MatrixPage() {
             </h1>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-              {/* Sort */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span className="matrix-sort-label">Sort</span>
                 <div className="matrix-sort-btns">
                   {SORTS.map(([val, label]) => (
-                    <button
-                      key={String(val)}
-                      className={`matrix-sort-btn${sortBy === val ? ' active' : ''}`}
-                      onClick={() => setSortBy(val)}
-                    >
+                    <button key={val} className={`matrix-sort-btn${sortBy === val ? ' active' : ''}`} onClick={() => setSortBy(val)}>
                       {label}
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Format filter */}
               <select
                 className="form-select"
                 style={{ width: 'auto', minWidth: '140px', padding: '6px 12px', fontSize: '13px' }}
                 value={formatFilter}
-                onChange={(e) => setFormatFilter(e.target.value)}
+                onChange={e => setFormatFilter(e.target.value)}
               >
                 <option value="">All Formats</option>
-                {formats.map((f) => (
-                  <option key={f.guid} value={f.guid}>{f.name}</option>
-                ))}
+                {formats.map(f => <option key={f.guid} value={f.guid}>{f.name}</option>)}
               </select>
 
-              {/* Player filter */}
               <select
                 className="form-select"
                 style={{ width: 'auto', minWidth: '150px', padding: '6px 12px', fontSize: '13px' }}
                 value={playerFilter}
-                onChange={(e) => setPlayerFilter(e.target.value)}
+                onChange={e => setPlayerFilter(e.target.value)}
               >
                 <option value="">All Players</option>
-                {users.filter((u) => u.status === 'Approved').map((u) => (
+                {users.filter(u => u.status === 'Approved').map(u => (
                   <option key={u.guid} value={u.guid}>{u.username}</option>
                 ))}
               </select>
 
-              {/* Legend search */}
               <input
                 className="form-select"
                 type="text"
                 placeholder="Search legends…"
                 value={legendSearch}
-                onChange={(e) => setLegendSearch(e.target.value)}
+                onChange={e => setLegendSearch(e.target.value)}
                 style={{ width: 'auto', minWidth: '160px' }}
+              />
+
+              <LegendMultiSelect
+                label="Playing"
+                options={legendOptions}
+                selected={playingFilter}
+                onChange={setPlayingFilter}
+              />
+
+              <LegendMultiSelect
+                label="Playing Against"
+                options={legendOptions}
+                selected={againstFilter}
+                onChange={setAgainstFilter}
               />
             </div>
           </div>
@@ -217,13 +264,13 @@ export default function MatrixPage() {
             <p className="placeholder-text">No data yet. Submit some results first.</p>
           )}
 
-          {status === 'success' && sortedLegends.length > 0 && (
+          {status === 'success' && rowLegends.length > 0 && (
             <table className="matrix-table">
               <thead>
                 <tr>
                   <th className="matrix-th matrix-th-label" />
                   <th className="matrix-th matrix-th-overall">Overall</th>
-                  {sortedLegends.map(([guid, s]) => (
+                  {colLegends.map(([guid, s]) => (
                     <th key={guid} className="matrix-th">
                       <div className="matrix-legend-header">
                         <img src={s.imageurl} alt={s.name} className="matrix-legend-img" />
@@ -234,71 +281,37 @@ export default function MatrixPage() {
                 </tr>
               </thead>
               <tbody>
-                {sortedLegends.map(([rowGuid, rowStat]) => {
+                {rowLegends.map(([rowGuid, rowStat]) => {
                   const rowWR = rowStat.total > 0 ? rowStat.wins / rowStat.total : 0
                   const pctOverall = rowStat.total > 0 ? (rowWR * 100).toFixed(2) : null
-
                   return (
                     <tr key={rowGuid} className="matrix-row">
-                      {/* Row label */}
                       <td className="matrix-td matrix-td-label">
                         <div className="matrix-row-label">
                           <img src={rowStat.imageurl} alt={rowStat.name} className="matrix-legend-img" />
                           <span>{rowStat.name}</span>
                         </div>
                       </td>
-
-                      {/* Overall WR */}
-                      <td
-                        className="matrix-td matrix-td-overall"
-                        style={{ background: cellBg(rowWR, rowStat.total) }}
-                      >
+                      <td className="matrix-td matrix-td-overall" style={{ background: cellBg(rowWR, rowStat.total) }}>
                         {pctOverall !== null ? (
                           <>
-                            <span className="matrix-wr" style={{ color: wrColor(rowWR, rowStat.total) }}>
-                              {pctOverall}%
-                            </span>
-                            <span className="matrix-record">
-                              {rowStat.wins}W {rowStat.losses}L
-                              {rowStat.draws > 0 ? ` ${rowStat.draws}D` : ''}
-                            </span>
+                            <span className="matrix-wr" style={{ color: wrColor(rowWR, rowStat.total) }}>{pctOverall}%</span>
+                            <span className="matrix-record">{rowStat.wins}W {rowStat.losses}L{rowStat.draws > 0 ? ` ${rowStat.draws}D` : ''}</span>
                           </>
                         ) : (
                           <span className="matrix-empty">—</span>
                         )}
                       </td>
-
-                      {/* Per-matchup cells */}
-                      {sortedLegends.map(([colGuid]) => {
-                        if (rowGuid === colGuid) {
-                          return <td key={colGuid} className="matrix-td matrix-td-self" />
-                        }
-
+                      {colLegends.map(([colGuid]) => {
+                        if (rowGuid === colGuid) return <td key={colGuid} className="matrix-td matrix-td-self" />
                         const cell = resolveCell(rowGuid, colGuid)
-                        if (!cell) {
-                          return (
-                            <td key={colGuid} className="matrix-td">
-                              <span className="matrix-empty">—</span>
-                            </td>
-                          )
-                        }
-
+                        if (!cell) return <td key={colGuid} className="matrix-td"><span className="matrix-empty">—</span></td>
                         const pct = cell.winrate.toFixed(2)
                         const wr01 = cell.winrate / 100
-
                         return (
-                          <td
-                            key={colGuid}
-                            className="matrix-td"
-                            style={{ background: cellBg(wr01, cell.totalgames) }}
-                          >
-                            <span className="matrix-wr" style={{ color: wrColor(wr01, cell.totalgames) }}>
-                              {pct}%
-                            </span>
-                            <span className="matrix-record">
-                              {cell.wins}W {cell.losses}L
-                              {cell.draws > 0 ? ` ${cell.draws}D` : ''}
-                            </span>
+                          <td key={colGuid} className="matrix-td" style={{ background: cellBg(wr01, cell.totalgames) }}>
+                            <span className="matrix-wr" style={{ color: wrColor(wr01, cell.totalgames) }}>{pct}%</span>
+                            <span className="matrix-record">{cell.wins}W {cell.losses}L{cell.draws > 0 ? ` ${cell.draws}D` : ''}</span>
                           </td>
                         )
                       })}

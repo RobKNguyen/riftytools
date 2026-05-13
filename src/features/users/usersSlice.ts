@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import { switchboard } from '../../services/switchboard'
+import { syncUser } from '../user/userSlice'
 
 export interface AppUser {
   guid: string
@@ -50,6 +51,11 @@ const usersSlice = createSlice({
       .addCase(fetchUsers.rejected, (state, action) => {
         state.status = 'error'
         state.error = action.payload ?? 'Unknown error'
+      })
+      .addCase(syncUser.fulfilled, (state) => {
+        // Role is now known — invalidate so the next mount re-fetches with correct permissions
+        state.status = 'idle'
+        state.data = []
       })
   },
 })
