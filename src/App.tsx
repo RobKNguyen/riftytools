@@ -11,6 +11,7 @@ import InputPage from './pages/InputPage'
 import AdminPage from './pages/AdminPage'
 import LogPage from './pages/LogPage'
 import ProfilePage from './pages/ProfilePage'
+import AnalyticsPage from './pages/AnalyticsPage'
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string
 
@@ -104,6 +105,7 @@ function AppContent() {
           }
         />
         <Route path="/log" element={<LogPage />} />
+        <Route path="/analytics" element={<AnalyticsPage />} />
         <Route path="/profile/me" element={<ProfileRedirect />} />
         <Route path="/profile/:userGuid" element={<ProfilePage />} />
         <Route path="*" element={<Navigate to="/" replace />} />

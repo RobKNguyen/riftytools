@@ -8,6 +8,7 @@ import adminReducer from '../features/admin/adminSlice'
 import logReducer from '../features/log/logSlice'
 import profileReducer from '../features/profile/profileSlice'
 import usersReducer from '../features/users/usersSlice'
+import analyticsReducer from '../features/analytics/analyticsSlice'
 
 export const store = configureStore({
   reducer: {
@@ -20,6 +21,7 @@ export const store = configureStore({
     log: logReducer,
     profile: profileReducer,
     users: usersReducer,
+    analytics: analyticsReducer,
   },
 })
 

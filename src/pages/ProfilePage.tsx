@@ -1,4 +1,8 @@
 import { useEffect, useState } from 'react'
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, Cell, ReferenceLine,
+} from 'recharts'
 import { useParams } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import toast from 'react-hot-toast'
@@ -10,6 +14,13 @@ import ConfirmDialog from '../components/ConfirmDialog'
 import EditResultModal from '../components/EditResultModal'
 import type { EditableResult } from '../components/EditResultModal'
 import Nav from '../components/Nav'
+
+function profileWrColor(wr: number): string {
+  if (wr >= 60) return '#4ade80'
+  if (wr >= 50) return '#86efac'
+  if (wr < 40)  return '#f87171'
+  return '#fca5a5'
+}
 
 function roleBadgeClass(role: string): string {
   return role === 'Admin' ? 'badge-approved' : 'badge-pending'
@@ -168,14 +179,72 @@ export default function ProfilePage() {
               </div>
 
               {data.toplegends.length > 0 && (
-                <div className="card">
-                  <h2 className="section-heading">Top Legends</h2>
-                  <div className="top-legends-grid">
-                    {data.toplegends.slice(0, 5).map((l) => (
-                      <LegendCard key={l.legend} l={l} />
-                    ))}
+                <>
+                  <div className="card">
+                    <h2 className="section-heading">Legend Performance</h2>
+                    <p className="chart-subtitle">Win rate by legend (top {Math.min(data.toplegends.length, 8)})</p>
+                    <ResponsiveContainer width="100%" height={Math.max(140, Math.min(data.toplegends.length, 8) * 44)}>
+                      <BarChart
+                        data={data.toplegends.slice(0, 8).map(l => ({
+                          name: l.legend.split(',')[0],
+                          wr: parseFloat(l.winrate.toFixed(1)),
+                          games: l.totalgames,
+                          wins: l.wins,
+                          losses: l.losses,
+                        }))}
+                        layout="vertical"
+                        margin={{ top: 4, right: 56, bottom: 4, left: 8 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="#21262d" horizontal={false} />
+                        <XAxis
+                          type="number"
+                          domain={[0, 100]}
+                          tickFormatter={v => `${v}%`}
+                          tick={{ fill: '#8b949e', fontSize: 12 }}
+                          axisLine={{ stroke: '#21262d' }}
+                          tickLine={false}
+                        />
+                        <YAxis
+                          type="category"
+                          dataKey="name"
+                          tick={{ fill: '#8b949e', fontSize: 12 }}
+                          width={96}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <Tooltip
+                          content={({ active, payload, label }) => {
+                            if (!active || !payload?.length) return null
+                            const d = payload[0].payload
+                            return (
+                              <div className="chart-tooltip">
+                                <p className="chart-tooltip-label">{label}</p>
+                                <p style={{ color: profileWrColor(d.wr), margin: '2px 0' }}>Win Rate: {d.wr}%</p>
+                                <p style={{ color: '#8b949e', fontSize: 12, marginTop: 4 }}>{d.wins}W {d.losses}L · {d.games}g</p>
+                              </div>
+                            )
+                          }}
+                          cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+                        />
+                        <ReferenceLine x={50} stroke="#484f58" strokeDasharray="4 4" />
+                        <Bar dataKey="wr" name="Win Rate" radius={[0, 6, 6, 0]} maxBarSize={28}>
+                          {data.toplegends.slice(0, 8).map((_, i) => (
+                            <Cell key={i} fill={profileWrColor(parseFloat(_.winrate.toFixed(1)))} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
                   </div>
-                </div>
+
+                  <div className="card">
+                    <h2 className="section-heading">Top Legends</h2>
+                    <div className="top-legends-grid">
+                      {data.toplegends.slice(0, 5).map((l) => (
+                        <LegendCard key={l.legend} l={l} />
+                      ))}
+                    </div>
+                  </div>
+                </>
               )}
 
               {data.recentresults.length > 0 && (

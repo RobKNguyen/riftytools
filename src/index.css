@@ -1293,6 +1293,64 @@ body {
   color: #f87171;
 }
 
+/* ── Analytics ────────────────────────────────────────── */
+
+.chart-subtitle {
+  font-size: 13px;
+  color: #8b949e;
+  margin-bottom: 16px;
+}
+
+.chart-tooltip {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  min-width: 140px;
+}
+
+.chart-tooltip-label {
+  color: #e6edf3;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.analytics-stat-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.analytics-stat-box {
+  flex: 1;
+  min-width: 120px;
+  text-align: center;
+  padding: 20px 16px;
+  border-radius: 12px;
+  border: 1px solid;
+}
+
+.analytics-stat-wr {
+  font-size: 32px;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1;
+}
+
+.analytics-stat-label {
+  font-size: 13px;
+  color: #8b949e;
+  margin-top: 6px;
+}
+
+.analytics-stat-games {
+  font-size: 12px;
+  color: #484f58;
+  margin-top: 2px;
+}
+
 /* ── Confirm dialog ───────────────────────────────────── */
 
 .dialog-overlay {

@@ -19,6 +19,9 @@ export default function Nav() {
         <Link to="/log" className={`nav-link${pathname === '/log' ? ' active' : ''}`}>
           Log
         </Link>
+        <Link to="/analytics" className={`nav-link${pathname === '/analytics' ? ' active' : ''}`}>
+          Analytics
+        </Link>
         <SignedIn>
           <Link
             to="/input"
