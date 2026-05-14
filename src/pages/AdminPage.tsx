@@ -1,7 +1,8 @@
 import { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
+import toast from 'react-hot-toast'
 import type { AppDispatch, RootState } from '../app/store'
-import { fetchUsers, updateUserStatus } from '../features/admin/adminSlice'
+import { fetchUsers, updateUserStatus, updateUserLevel } from '../features/admin/adminSlice'
 import Nav from '../components/Nav'
 
 function statusBadge(status: string) {
@@ -45,6 +46,7 @@ export default function AdminPage() {
                     <th>Email</th>
                     <th>Status</th>
                     <th>Role</th>
+                    <th>Level</th>
                     <th>Created</th>
                     <th>Actions</th>
                   </tr>
@@ -56,6 +58,11 @@ export default function AdminPage() {
                       <td className="admin-email">{u.email}</td>
                       <td>{statusBadge(u.status)}</td>
                       <td>{u.role}</td>
+                      <td>
+                        {u.level === 'Pro'
+                          ? <span className="pro-badge">Pro</span>
+                          : <span style={{ color: '#484f58', fontSize: 12 }}>Standard</span>}
+                      </td>
                       <td className="admin-date">
                         {new Date(u.createdon).toLocaleDateString()}
                       </td>
@@ -66,6 +73,9 @@ export default function AdminPage() {
                             disabled={u.status === 'Approved' || !!updating[u.guid]}
                             onClick={() =>
                               dispatch(updateUserStatus({ guid: u.guid, status: 'Approved' }))
+                                .unwrap()
+                                .then(() => toast.success(`${u.username} approved`))
+                                .catch(() => toast.error('Failed to update status'))
                             }
                           >
                             Approve
@@ -75,10 +85,42 @@ export default function AdminPage() {
                             disabled={u.status === 'Rejected' || !!updating[u.guid]}
                             onClick={() =>
                               dispatch(updateUserStatus({ guid: u.guid, status: 'Rejected' }))
+                                .unwrap()
+                                .then(() => toast.success(`${u.username} rejected`))
+                                .catch(() => toast.error('Failed to update status'))
                             }
                           >
                             Reject
                           </button>
+                          {u.level === 'Pro' ? (
+                            <button
+                              className="admin-btn"
+                              style={{ borderColor: 'rgba(245,158,11,0.3)', color: '#f59e0b', background: 'rgba(245,158,11,0.08)' }}
+                              disabled={!!updating[u.guid]}
+                              onClick={() =>
+                                dispatch(updateUserLevel({ guid: u.guid, level: 'Standard' }))
+                                  .unwrap()
+                                  .then(() => toast.success(`${u.username} is now Standard`))
+                                  .catch(() => toast.error('Failed to update level'))
+                              }
+                            >
+                              Remove Pro
+                            </button>
+                          ) : (
+                            <button
+                              className="admin-btn"
+                              style={{ borderColor: 'rgba(245,158,11,0.3)', color: '#f59e0b', background: 'rgba(245,158,11,0.08)' }}
+                              disabled={!!updating[u.guid]}
+                              onClick={() =>
+                                dispatch(updateUserLevel({ guid: u.guid, level: 'Pro' }))
+                                  .unwrap()
+                                  .then(() => toast.success(`${u.username} is now Pro`))
+                                  .catch(() => toast.error('Failed to update level'))
+                              }
+                            >
+                              Make Pro
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

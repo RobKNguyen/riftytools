@@ -56,7 +56,15 @@ function FeedItem({
   onDelete: (guid: string) => void
 }) {
   const score = gameScore(item)
+  const [notesOpen, setNotesOpen] = useState(false)
   const legend = (name: string) => name.split(',')[0]
+
+  const userLabel = item.legenduservariant
+    ? `${legend(item.legenduser)} (${item.legenduservariant})`
+    : legend(item.legenduser)
+  const oppLabel = item.legendoppvariant
+    ? `${legend(item.legendopp)} (${item.legendoppvariant})`
+    : legend(item.legendopp)
 
   return (
     <div className="log-item">
@@ -67,10 +75,11 @@ function FeedItem({
       <div className="log-content">
         <p className="log-headline">
           <Link to={`/profile/${item.user_guid}`} className="log-username">{item.username}</Link>
+          {item.userlevel === 'Pro' && <>{' '}<span className="pro-badge">Pro</span></>}
           {' '}
           <span className={`log-verb ${resultClass(item.overallresult)}`}>{resultVerb(item.overallresult)}</span>
-          {' '}with <span className="log-legend-name">{legend(item.legenduser)}</span>
-          {' '}vs <span className="log-legend-name">{legend(item.legendopp)}</span>
+          {' '}with <span className="log-legend-name">{userLabel}</span>
+          {' '}vs <span className="log-legend-name">{oppLabel}</span>
         </p>
         <p className="log-meta">
           {item.oppusername && item.oppuser_guid && (
@@ -78,7 +87,19 @@ function FeedItem({
           )}
           {item.format}{score && ` • ${score}`} • {timeAgo(item.playedon)}
         </p>
+        {notesOpen && item.notes && (
+          <p className="log-notes">{item.notes}</p>
+        )}
       </div>
+      {item.notes && (
+        <button
+          className="notes-icon-btn"
+          title={notesOpen ? 'Hide notes' : 'Show notes'}
+          onClick={() => setNotesOpen((o) => !o)}
+        >
+          📝
+        </button>
+      )}
       <span className={`log-badge ${resultClass(item.overallresult)}`}>{item.overallresult}</span>
       {isOwn && (
         <div className="result-actions">
@@ -94,6 +115,9 @@ function FeedItem({
               resultfirst: item.resultfirst ?? '',
               resultsecond: item.resultsecond ?? null,
               resultthird: item.resultthird ?? null,
+              legenduservariant_guid: item.legenduservariant_guid ?? null,
+              legendoppvariant_guid: item.legendoppvariant_guid ?? null,
+              notes: item.notes ?? null,
               format: item.format,
               legenduser: item.legenduser,
               legendopp: item.legendopp,

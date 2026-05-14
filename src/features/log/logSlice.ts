@@ -5,6 +5,7 @@ export interface GameResult {
   guid: string
   username: string
   user_guid: string
+  userlevel: string
   oppusername: string | null
   oppuser_guid: string | null
   legenduser: string
@@ -25,6 +26,11 @@ export interface GameResult {
   resultfirst?: string
   resultsecond?: string | null
   resultthird?: string | null
+  legenduservariant?: string | null
+  legendoppvariant?: string | null
+  legenduservariant_guid?: string | null
+  legendoppvariant_guid?: string | null
+  notes?: string | null
 }
 
 interface LogState {

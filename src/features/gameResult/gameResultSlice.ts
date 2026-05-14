@@ -18,6 +18,9 @@ export interface GameResultPayload {
   ResultSecond: string | null
   ResultThird: string | null
   OppUser_GUID?: string
+  LegendUserVariant_GUID?: string
+  LegendOppVariant_GUID?: string
+  Notes?: string
 }
 
 export interface GameResultFormState {
@@ -29,6 +32,9 @@ export interface GameResultFormState {
   ResultFirst: string
   ResultSecond: string
   ResultThird: string
+  LegendUserVariant_GUID: string
+  LegendOppVariant_GUID: string
+  Notes: string
 }
 
 interface GameResultState {
@@ -47,6 +53,9 @@ const blankForm: GameResultFormState = {
   ResultFirst: '',
   ResultSecond: '',
   ResultThird: '',
+  LegendUserVariant_GUID: '',
+  LegendOppVariant_GUID: '',
+  Notes: '',
 }
 
 const initialState: GameResultState = {
@@ -75,6 +84,9 @@ export const submitGameResult = createAsyncThunk<
     ResultThird: payload.ResultThird,
   }
   if (payload.OppUser_GUID) body['OppUser_GUID'] = payload.OppUser_GUID
+  if (payload.LegendUserVariant_GUID) body['LegendUserVariant_GUID'] = payload.LegendUserVariant_GUID
+  if (payload.LegendOppVariant_GUID) body['LegendOppVariant_GUID'] = payload.LegendOppVariant_GUID
+  if (payload.Notes) body['Notes'] = payload.Notes
   const data = await switchboard<never>('GameResult_In', body, roles)
   if (!data.Success) return rejectWithValue(data.Error ?? 'Submission failed')
   return { Success: data.Success, GUID: data.GUID }

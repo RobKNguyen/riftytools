@@ -95,6 +95,7 @@ export default function AnalyticsPage() {
 
   const [formatFilter, setFormatFilter] = useState('')
   const [playerFilter, setPlayerFilter] = useState('')
+  const [proOnly, setProOnly] = useState(false)
 
   useEffect(() => {
     if (formatsStatus === 'idle') dispatch(fetchFormats())
@@ -105,8 +106,8 @@ export default function AnalyticsPage() {
   }, [dispatch, usersStatus])
 
   useEffect(() => {
-    dispatch(fetchAnalytics({ formatGuid: formatFilter || null }))
-  }, [dispatch, formatFilter])
+    dispatch(fetchAnalytics({ formatGuid: formatFilter || null, proOnly: proOnly || undefined }))
+  }, [dispatch, formatFilter, proOnly])
 
   const MIN_GAMES = 3
 
@@ -186,6 +187,12 @@ export default function AnalyticsPage() {
                   <option value="">All Players</option>
                   {approvedUsers.map(u => <option key={u.guid} value={u.guid}>{u.username}</option>)}
                 </select>
+                <button
+                  className={`matrix-sort-btn${proOnly ? ' active' : ''}`}
+                  onClick={() => setProOnly(o => !o)}
+                >
+                  Pro Only
+                </button>
               </div>
             </div>
           </div>
@@ -341,6 +348,48 @@ export default function AnalyticsPage() {
                       <Bar dataKey="Went Second" fill={C_SECOND} radius={[0, 6, 6, 0]} maxBarSize={16} />
                     </BarChart>
                   </ResponsiveContainer>
+                </div>
+              )}
+
+              {/* Players table */}
+              {leaderboardData.length > 0 && (
+                <div className="card">
+                  <h2 className="section-heading">Players</h2>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table className="admin-table">
+                      <thead>
+                        <tr>
+                          <th>Player</th>
+                          <th>Level</th>
+                          <th style={{ textAlign: 'right' }}>Games</th>
+                          <th style={{ textAlign: 'right' }}>Win Rate</th>
+                          <th style={{ textAlign: 'right' }}>Record</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[...players]
+                          .filter(p => p.totalgames >= MIN_GAMES)
+                          .sort((a, b) => b.winrate - a.winrate)
+                          .map(p => (
+                            <tr key={p.user_guid}>
+                              <td style={{ fontWeight: 600 }}>{p.username}</td>
+                              <td>
+                                {p.level === 'Pro'
+                                  ? <span className="pro-badge">Pro</span>
+                                  : <span style={{ color: '#484f58', fontSize: 12 }}>Standard</span>}
+                              </td>
+                              <td style={{ textAlign: 'right', color: '#8b949e' }}>{p.totalgames}</td>
+                              <td style={{ textAlign: 'right', fontWeight: 700, color: p.winrate >= 50 ? '#4ade80' : '#f87171' }}>
+                                {p.winrate.toFixed(1)}%
+                              </td>
+                              <td style={{ textAlign: 'right', color: '#6e7681', fontSize: 12 }}>
+                                {p.wins}W {p.losses}L{p.draws > 0 ? ` ${p.draws}D` : ''}
+                              </td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
 

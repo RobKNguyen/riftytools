@@ -5,6 +5,7 @@ import type { AppDispatch, RootState } from '../app/store'
 import { fetchLegends } from '../features/legends/legendsSlice'
 import { fetchFormats } from '../features/formats/formatsSlice'
 import { switchboard } from '../services/switchboard'
+import type { LegendVariant } from '../features/legendVariants/legendVariantSlice'
 import { WIN_GUID, LOSS_GUID, DRAW_GUID, RESULT_TYPES, computeMatchResult } from '../constants'
 import LegendSelect from './LegendSelect'
 
@@ -17,6 +18,9 @@ export interface EditableResult {
   resultfirst: string
   resultsecond: string | null
   resultthird: string | null
+  legenduservariant_guid?: string | null
+  legendoppvariant_guid?: string | null
+  notes?: string | null
   // fallback name fields used when GUID fields are empty
   format?: string
   legenduser?: string
@@ -60,7 +64,26 @@ export default function EditResultModal({ result, onClose, onSuccess }: Props) {
   const [game1, setGame1] = useState(result.resultfirst || strToGuid(result.game1))
   const [game2, setGame2] = useState(result.resultsecond ?? strToGuid(result.game2))
   const [game3, setGame3] = useState(result.resultthird ?? strToGuid(result.game3))
+  const [userVariantGuid, setUserVariantGuid] = useState(result.legenduservariant_guid ?? '')
+  const [oppVariantGuid, setOppVariantGuid] = useState(result.legendoppvariant_guid ?? '')
+  const [userVariants, setUserVariants] = useState<LegendVariant[]>([])
+  const [oppVariants, setOppVariants] = useState<LegendVariant[]>([])
+  const [notes, setNotes] = useState(result.notes ?? '')
   const [submitting, setSubmitting] = useState(false)
+
+  useEffect(() => {
+    if (!legendUserGuid) { setUserVariants([]); return }
+    const roles = userRole ? [userRole] : ['Player']
+    switchboard<LegendVariant[]>('LegendVariants_Out', { Legend_GUID: legendUserGuid }, roles)
+      .then(res => setUserVariants(res.Data ?? []))
+  }, [legendUserGuid, userRole])
+
+  useEffect(() => {
+    if (!legendOppGuid) { setOppVariants([]); return }
+    const roles = userRole ? [userRole] : ['Player']
+    switchboard<LegendVariant[]>('LegendVariants_Out', { Legend_GUID: legendOppGuid }, roles)
+      .then(res => setOppVariants(res.Data ?? []))
+  }, [legendOppGuid, userRole])
 
   // Fallback: look up GUIDs by name when the API didn't return GUID fields
   useEffect(() => {
@@ -103,6 +126,9 @@ export default function EditResultModal({ result, onClose, onSuccess }: Props) {
       ResultSecond: maxGames >= 2 && game2 ? game2 : null,
       ResultThird: maxGames >= 3 && game3 ? game3 : null,
     }
+    if (userVariantGuid) payload['LegendUserVariant_GUID'] = userVariantGuid
+    if (oppVariantGuid) payload['LegendOppVariant_GUID'] = oppVariantGuid
+    if (notes.trim()) payload['Notes'] = notes.trim()
 
     const data = await switchboard('GameResult_In', payload, [userRole ?? 'Player'])
     setSubmitting(false)
@@ -127,12 +153,12 @@ export default function EditResultModal({ result, onClose, onSuccess }: Props) {
         <form onSubmit={handleSubmit} className="modal-body">
           <div className="form-group">
             <label className="form-label">Format</label>
-            <div className="btn-group">
+            <div className="format-grid">
               {formats.map((f) => (
                 <button
                   key={f.guid}
                   type="button"
-                  className={`btn-opt${formatGuid === f.guid ? ' active' : ''}`}
+                  className={`format-pill${formatGuid === f.guid ? ' active' : ''}`}
                   onClick={() => { setFormatGuid(f.guid); setGame1(''); setGame2(''); setGame3('') }}
                 >
                   {f.name}
@@ -153,6 +179,33 @@ export default function EditResultModal({ result, onClose, onSuccess }: Props) {
               </div>
             </div>
           </div>
+
+          {(userVariants.length > 0 || oppVariants.length > 0) && (
+            <div className="form-group">
+              <div className="form-row">
+                <div>
+                  <label className="form-label">
+                    Variant{' '}
+                    <span style={{ color: '#484f58', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>— optional</span>
+                  </label>
+                  <select className="form-select" value={userVariantGuid} onChange={(e) => setUserVariantGuid(e.target.value)} disabled={userVariants.length === 0}>
+                    <option value="">None</option>
+                    {userVariants.map((v) => <option key={v.guid} value={v.guid}>{v.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="form-label">
+                    Opponent Variant{' '}
+                    <span style={{ color: '#484f58', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>— optional</span>
+                  </label>
+                  <select className="form-select" value={oppVariantGuid} onChange={(e) => setOppVariantGuid(e.target.value)} disabled={oppVariants.length === 0}>
+                    <option value="">None</option>
+                    {oppVariants.map((v) => <option key={v.guid} value={v.guid}>{v.name}</option>)}
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="form-group">
             <label className="form-label">Initiative</label>
@@ -213,6 +266,20 @@ export default function EditResultModal({ result, onClose, onSuccess }: Props) {
               )}
             </>
           )}
+
+          <div className="form-group">
+            <label className="form-label">
+              Match Notes{' '}
+              <span style={{ color: '#484f58', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>— optional</span>
+            </label>
+            <textarea
+              className="form-select notes-textarea"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Any notes about this match…"
+              rows={3}
+            />
+          </div>
 
           <button type="submit" className="submit-btn" style={{ marginTop: '8px' }} disabled={!isValid || submitting}>
             {submitting ? 'Saving…' : 'Update Result'}

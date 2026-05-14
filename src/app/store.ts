@@ -3,6 +3,7 @@ import gameResultReducer from '../features/gameResult/gameResultSlice'
 import matrixReducer from '../features/matrix/matrixSlice'
 import legendsReducer from '../features/legends/legendsSlice'
 import formatsReducer from '../features/formats/formatsSlice'
+import legendVariantsReducer from '../features/legendVariants/legendVariantSlice'
 import userReducer from '../features/user/userSlice'
 import adminReducer from '../features/admin/adminSlice'
 import logReducer from '../features/log/logSlice'
@@ -17,6 +18,7 @@ export const store = configureStore({
     matrix: matrixReducer,
     legends: legendsReducer,
     formats: formatsReducer,
+    legendVariants: legendVariantsReducer,
     admin: adminReducer,
     log: logReducer,
     profile: profileReducer,

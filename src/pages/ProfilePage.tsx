@@ -62,18 +62,44 @@ function RecentRow({
   onEdit: (r: EditableResult) => void
   onDelete: (guid: string) => void
 }) {
+  const [notesOpen, setNotesOpen] = useState(false)
+  const userLabel = r.legenduservariant
+    ? `${r.legenduser.split(',')[0]} (${r.legenduservariant})`
+    : r.legenduser.split(',')[0]
+  const oppLabel = r.legendoppvariant
+    ? `${r.legendopp.split(',')[0]} (${r.legendoppvariant})`
+    : r.legendopp.split(',')[0]
+
   return (
     <div className="recent-item">
       <div className="recent-legends">
         <img src={r.legenduserimage} alt={r.legenduser} className="recent-legend-img" />
         <img src={r.legendoppimage} alt={r.legendopp} className="recent-legend-img recent-legend-opp" />
       </div>
-      <div className="recent-info">
-        <span className="recent-matchup">
-          {r.legenduser.split(',')[0]} <span className="recent-vs">vs</span> {r.legendopp.split(',')[0]}
-        </span>
-        <span className="recent-format">{r.format}</span>
+      <div className="recent-content">
+        <div className="recent-info">
+          <span className="recent-matchup">
+            {r.legenduser.split(',')[0]}
+            {r.legenduservariant && <span className="recent-variant"> · {r.legenduservariant}</span>}
+            {' '}<span className="recent-vs">vs</span>{' '}
+            {r.legendopp.split(',')[0]}
+            {r.legendoppvariant && <span className="recent-variant"> · {r.legendoppvariant}</span>}
+          </span>
+          <span className="recent-format">{r.format}</span>
+        </div>
+        {notesOpen && r.notes && (
+          <p className="log-notes" style={{ margin: '4px 0 0' }}>{r.notes}</p>
+        )}
       </div>
+      {r.notes && (
+        <button
+          className="notes-icon-btn"
+          title={notesOpen ? 'Hide notes' : 'Show notes'}
+          onClick={() => setNotesOpen(o => !o)}
+        >
+          📝
+        </button>
+      )}
       <span className={`log-badge ${resultClass(r.overallresult)}`}>{r.overallresult}</span>
       {isOwn && (
         <div className="result-actions">
@@ -89,6 +115,9 @@ function RecentRow({
               resultfirst: r.resultfirst ?? '',
               resultsecond: r.resultsecond ?? null,
               resultthird: r.resultthird ?? null,
+              legenduservariant_guid: r.legenduservariant_guid ?? null,
+              legendoppvariant_guid: r.legendoppvariant_guid ?? null,
+              notes: r.notes ?? null,
               format: r.format,
               legenduser: r.legenduser,
               legendopp: r.legendopp,
@@ -154,7 +183,10 @@ export default function ProfilePage() {
               <div className="card profile-header-card">
                 <div className="profile-header-row">
                   <div>
-                    <h1 className="profile-username">{data.userinfo.username}</h1>
+                    <h1 className="profile-username">
+                      {data.userinfo.username}
+                      {data.userinfo.level === 'Pro' && <span className="pro-badge" style={{ marginLeft: 8 }}>Pro</span>}
+                    </h1>
                     <p className="profile-since">Member since {memberSince(data.userinfo.createdon)}</p>
                   </div>
                   <span className={`admin-badge ${roleBadgeClass(data.userinfo.role)}`}>

@@ -3,7 +3,10 @@
     "allow": [
       "Bash(npm install *)",
       "Bash(npx tsc *)",
-      "Bash(Get-ChildItem -Recurse \"c:\\\\Users\\\\robin\\\\Home\\\\Developer\\\\Projects\\\\RiftyElites\\\\riftytools\\\\src\" -Filter \"*selector*\" -ErrorAction SilentlyContinue)"
+      "Bash(Get-ChildItem -Recurse \"c:\\\\Users\\\\robin\\\\Home\\\\Developer\\\\Projects\\\\RiftyElites\\\\riftytools\\\\src\" -Filter \"*selector*\" -ErrorAction SilentlyContinue)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\robin\\\\Home\\\\Developer\\\\Projects\\\\RiftyElites\\\\riftytools\" -Recurse -ErrorAction SilentlyContinue)",
+      "Bash(Select-Object FullName)",
+      "PowerShell(head -50)"
     ]
   }
 }

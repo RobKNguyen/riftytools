@@ -7,6 +7,7 @@ export interface AdminUser {
   email: string
   status: string
   role: string
+  level: string
   createdon: string
 }
 
@@ -32,6 +33,16 @@ export const fetchUsers = createAsyncThunk<
   const data = await switchboard<AdminUser[]>('Users_Out', {}, ['Admin'])
   if (!data.Success) return rejectWithValue(data.Error ?? 'Failed to fetch users')
   return data.Data ?? []
+})
+
+export const updateUserLevel = createAsyncThunk<
+  { guid: string; level: string },
+  { guid: string; level: 'Pro' | 'Standard' },
+  { rejectValue: string }
+>('admin/updateUserLevel', async ({ guid, level }, { rejectWithValue }) => {
+  const data = await switchboard('User_Level_In', { GUID: guid, Level: level }, ['Admin'])
+  if (!data.Success) return rejectWithValue(data.Error ?? 'Failed to update level')
+  return { guid, level }
 })
 
 export const updateUserStatus = createAsyncThunk<
@@ -71,6 +82,17 @@ const adminSlice = createSlice({
         if (user) user.status = action.payload.status
       })
       .addCase(updateUserStatus.rejected, (state, action) => {
+        delete state.updating[action.meta.arg.guid]
+      })
+      .addCase(updateUserLevel.pending, (state, action) => {
+        state.updating[action.meta.arg.guid] = true
+      })
+      .addCase(updateUserLevel.fulfilled, (state, action) => {
+        delete state.updating[action.payload.guid]
+        const user = state.users.find((u) => u.guid === action.payload.guid)
+        if (user) user.level = action.payload.level
+      })
+      .addCase(updateUserLevel.rejected, (state, action) => {
         delete state.updating[action.meta.arg.guid]
       })
   },

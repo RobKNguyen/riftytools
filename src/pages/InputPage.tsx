@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useDispatch, useSelector } from 'react-redux'
 import type { AppDispatch, RootState } from '../app/store'
@@ -6,6 +6,8 @@ import { updateField, resetForm, submitGameResult } from '../features/gameResult
 import { fetchLegends } from '../features/legends/legendsSlice'
 import { fetchFormats } from '../features/formats/formatsSlice'
 import { fetchUsers } from '../features/users/usersSlice'
+import { switchboard } from '../services/switchboard'
+import type { LegendVariant } from '../features/legendVariants/legendVariantSlice'
 import {
   RESULT_TYPES,
   WIN_GUID,
@@ -46,12 +48,30 @@ export default function InputPage() {
     (state: RootState) => state.users
   )
   const userGuid = useSelector((state: RootState) => state.user.guid)
+  const userRole = useSelector((state: RootState) => state.user.role)
+
+  const [userVariants, setUserVariants] = useState<LegendVariant[]>([])
+  const [oppVariants, setOppVariants] = useState<LegendVariant[]>([])
 
   useEffect(() => {
     if (legendsStatus === 'idle') dispatch(fetchLegends())
     if (formatsStatus === 'idle') dispatch(fetchFormats())
     if (usersStatus === 'idle') dispatch(fetchUsers())
   }, [dispatch, legendsStatus, formatsStatus, usersStatus])
+
+  useEffect(() => {
+    if (!form.LegendUser_GUID) { setUserVariants([]); return }
+    const roles = userRole ? [userRole] : ['Player']
+    switchboard<LegendVariant[]>('LegendVariants_Out', { Legend_GUID: form.LegendUser_GUID }, roles)
+      .then(res => setUserVariants(res.Data ?? []))
+  }, [form.LegendUser_GUID, userRole])
+
+  useEffect(() => {
+    if (!form.LegendOpp_GUID) { setOppVariants([]); return }
+    const roles = userRole ? [userRole] : ['Player']
+    switchboard<LegendVariant[]>('LegendVariants_Out', { Legend_GUID: form.LegendOpp_GUID }, roles)
+      .then(res => setOppVariants(res.Data ?? []))
+  }, [form.LegendOpp_GUID, userRole])
 
   const selectedFormat = formats.find((f) => f.guid === form.Format_GUID)
   const maxGames = selectedFormat?.maxgames ?? 0
@@ -98,6 +118,9 @@ export default function InputPage() {
         ResultSecond: maxGames >= 2 && form.ResultSecond !== '' ? form.ResultSecond : null,
         ResultThird: maxGames >= 3 && form.ResultThird !== '' ? form.ResultThird : null,
         OppUser_GUID: form.OppUser_GUID || undefined,
+        LegendUserVariant_GUID: form.LegendUserVariant_GUID || undefined,
+        LegendOppVariant_GUID: form.LegendOppVariant_GUID || undefined,
+        Notes: form.Notes.trim() || undefined,
       })
     )
   }
@@ -120,12 +143,12 @@ export default function InputPage() {
               {/* Format */}
               <div className="form-group">
                 <label className="form-label">Format</label>
-                <div className="btn-group">
+                <div className="format-grid">
                   {formats.map((f) => (
                     <button
                       key={f.guid}
                       type="button"
-                      className={`btn-opt${form.Format_GUID === f.guid ? ' active' : ''}`}
+                      className={`format-pill${form.Format_GUID === f.guid ? ' active' : ''}`}
                       onClick={() =>
                         dispatch(
                           updateField({
@@ -150,7 +173,7 @@ export default function InputPage() {
                     <label className="form-label">Your Legend</label>
                     <LegendSelect
                       value={form.LegendUser_GUID}
-                      onChange={(guid) => dispatch(updateField({ LegendUser_GUID: guid }))}
+                      onChange={(guid) => dispatch(updateField({ LegendUser_GUID: guid, LegendUserVariant_GUID: '' }))}
                       legends={legends}
                       placeholder="Select legend…"
                     />
@@ -159,13 +182,51 @@ export default function InputPage() {
                     <label className="form-label">Opponent's Legend</label>
                     <LegendSelect
                       value={form.LegendOpp_GUID}
-                      onChange={(guid) => dispatch(updateField({ LegendOpp_GUID: guid }))}
+                      onChange={(guid) => dispatch(updateField({ LegendOpp_GUID: guid, LegendOppVariant_GUID: '' }))}
                       legends={legends}
                       placeholder="Select legend…"
                     />
                   </div>
                 </div>
               </div>
+
+              {/* Variants */}
+              {(userVariants.length > 0 || oppVariants.length > 0) && (
+                <div className="form-group">
+                  <div className="form-row">
+                    <div>
+                      <label className="form-label">
+                        Variant{' '}
+                        <span style={{ color: '#484f58', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>— optional</span>
+                      </label>
+                      <select
+                        className="form-select"
+                        value={form.LegendUserVariant_GUID}
+                        onChange={(e) => dispatch(updateField({ LegendUserVariant_GUID: e.target.value }))}
+                        disabled={userVariants.length === 0}
+                      >
+                        <option value="">None</option>
+                        {userVariants.map((v) => <option key={v.guid} value={v.guid}>{v.name}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="form-label">
+                        Opponent Variant{' '}
+                        <span style={{ color: '#484f58', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>— optional</span>
+                      </label>
+                      <select
+                        className="form-select"
+                        value={form.LegendOppVariant_GUID}
+                        onChange={(e) => dispatch(updateField({ LegendOppVariant_GUID: e.target.value }))}
+                        disabled={oppVariants.length === 0}
+                      >
+                        <option value="">None</option>
+                        {oppVariants.map((v) => <option key={v.guid} value={v.guid}>{v.name}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Opponent user (optional) */}
               <div className="form-group">
@@ -292,6 +353,21 @@ export default function InputPage() {
                   )}
                 </>
               )}
+
+              {/* Notes */}
+              <div className="form-group">
+                <label className="form-label">
+                  Match Notes{' '}
+                  <span style={{ color: '#484f58', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>— optional</span>
+                </label>
+                <textarea
+                  className="form-select notes-textarea"
+                  value={form.Notes}
+                  onChange={(e) => dispatch(updateField({ Notes: e.target.value }))}
+                  placeholder="Any notes about this match…"
+                  rows={3}
+                />
+              </div>
 
               <button
                 type="submit"

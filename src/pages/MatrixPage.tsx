@@ -91,6 +91,7 @@ export default function MatrixPage() {
   const [sortBy, setSortBy] = useState<SortBy>('winrate')
   const [formatFilter, setFormatFilter] = useState<string>('')
   const [playerFilter, setPlayerFilter] = useState<string>('')
+  const [proOnly, setProOnly] = useState(false)
   const [legendSearch, setLegendSearch] = useState<string>('')
   const [playingFilter, setPlayingFilter] = useState<string[]>([])
   const [againstFilter, setAgainstFilter] = useState<string[]>([])
@@ -104,8 +105,8 @@ export default function MatrixPage() {
   }, [dispatch, usersStatus])
 
   useEffect(() => {
-    dispatch(fetchMatrix({ formatGuid: formatFilter || null, wentFirst: null, userGuid: playerFilter || null }))
-  }, [dispatch, formatFilter, playerFilter])
+    dispatch(fetchMatrix({ formatGuid: formatFilter || null, wentFirst: null, userGuid: playerFilter || null, proOnly: proOnly || undefined }))
+  }, [dispatch, formatFilter, playerFilter, proOnly])
 
   const legendStats = useMemo(() => {
     const map = new Map<string, LegendStat>()
@@ -124,20 +125,55 @@ export default function MatrixPage() {
     return map
   }, [data])
 
+  const grid = useMemo(() => {
+    const g = new Map<string, Map<string, (typeof data)[0]>>()
+    data.forEach((e) => {
+      if (!g.has(e.legenduser_guid)) g.set(e.legenduser_guid, new Map())
+      g.get(e.legenduser_guid)!.set(e.legendopp_guid, e)
+    })
+    return g
+  }, [data])
+
+  const legendOverall = useMemo(() => {
+    const allGuids = [...legendStats.keys()]
+    const result = new Map<string, { wins: number; total: number }>()
+    allGuids.forEach(rowGuid => {
+      let wins = 0, total = 0
+      allGuids.forEach(colGuid => {
+        if (colGuid === rowGuid) return
+        const direct = grid.get(rowGuid)?.get(colGuid)
+        if (direct && direct.totalgames > 0) {
+          wins += direct.wins
+          total += direct.wins + direct.losses + direct.draws
+        } else {
+          const inv = grid.get(colGuid)?.get(rowGuid)
+          if (inv && inv.totalgames > 0) {
+            wins += inv.losses
+            total += inv.wins + inv.losses + inv.draws
+          }
+        }
+      })
+      result.set(rowGuid, { wins, total })
+    })
+    return result
+  }, [legendStats, grid])
+
   const sortedLegends = useMemo(() => {
     const query = legendSearch.toLowerCase().trim()
     return [...legendStats.entries()]
       .filter(([, s]) => !query || s.name.toLowerCase().includes(query))
-      .sort(([, a], [, b]) => {
+      .sort(([guidA, a], [guidB, b]) => {
         if (sortBy === 'name') return a.name.localeCompare(b.name)
+        const sA = legendOverall.get(guidA) ?? { wins: 0, total: 0 }
+        const sB = legendOverall.get(guidB) ?? { wins: 0, total: 0 }
         if (sortBy === 'winrate') {
-          const wrA = a.total > 0 ? a.wins / a.total : -1
-          const wrB = b.total > 0 ? b.wins / b.total : -1
+          const wrA = sA.total > 0 ? sA.wins / sA.total : -1
+          const wrB = sB.total > 0 ? sB.wins / sB.total : -1
           return wrB - wrA
         }
-        return b.total - a.total
+        return sB.total - sA.total
       })
-  }, [legendStats, sortBy, legendSearch])
+  }, [legendStats, legendOverall, sortBy, legendSearch])
 
   const legendOptions = useMemo(
     () => [...legendStats.entries()].sort(([, a], [, b]) => a.name.localeCompare(b.name)),
@@ -153,15 +189,6 @@ export default function MatrixPage() {
     () => againstFilter.length > 0 ? sortedLegends.filter(([g]) => againstFilter.includes(g)) : sortedLegends,
     [sortedLegends, againstFilter],
   )
-
-  const grid = useMemo(() => {
-    const g = new Map<string, Map<string, (typeof data)[0]>>()
-    data.forEach((e) => {
-      if (!g.has(e.legenduser_guid)) g.set(e.legenduser_guid, new Map())
-      g.get(e.legenduser_guid)!.set(e.legendopp_guid, e)
-    })
-    return g
-  }, [data])
 
   function resolveCell(rowGuid: string, colGuid: string) {
     const direct = grid.get(rowGuid)?.get(colGuid)
@@ -232,6 +259,13 @@ export default function MatrixPage() {
                   <option key={u.guid} value={u.guid}>{u.username}</option>
                 ))}
               </select>
+
+              <button
+                className={`matrix-sort-btn${proOnly ? ' active' : ''}`}
+                onClick={() => setProOnly(o => !o)}
+              >
+                Pro Only
+              </button>
 
               <input
                 className="form-select"

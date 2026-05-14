@@ -6,6 +6,7 @@ export interface ProfileUserInfo {
   username: string
   email: string
   role: string
+  level: string
   status: string
   createdon: string
 }
@@ -47,6 +48,11 @@ export interface RecentResult {
   resultfirst?: string
   resultsecond?: string | null
   resultthird?: string | null
+  legenduservariant?: string | null
+  legendoppvariant?: string | null
+  legenduservariant_guid?: string | null
+  legendoppvariant_guid?: string | null
+  notes?: string | null
 }
 
 export interface ProfileData {

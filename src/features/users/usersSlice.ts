@@ -8,6 +8,7 @@ export interface AppUser {
   email: string
   status: string
   role: string
+  level: string
 }
 
 interface UsersState {

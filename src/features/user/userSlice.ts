@@ -7,6 +7,7 @@ interface UserSyncResponse {
   GUID: string
   Status: string
   Role: string
+  level?: string
 }
 
 interface UserState {
@@ -14,6 +15,7 @@ interface UserState {
   guid: string | null
   status: string | null
   role: string | null
+  level: string | null
   username: string | null
   synced: boolean
   syncStatus: 'idle' | 'loading' | 'success' | 'error'
@@ -25,6 +27,7 @@ const initialState: UserState = {
   guid: null,
   status: null,
   role: null,
+  level: null,
   username: null,
   synced: false,
   syncStatus: 'idle',
@@ -59,6 +62,7 @@ const userSlice = createSlice({
       state.guid = null
       state.status = null
       state.role = null
+      state.level = null
       state.username = null
       state.synced = false
       state.syncStatus = 'idle'
@@ -77,6 +81,7 @@ const userSlice = createSlice({
         state.guid = action.payload.GUID
         state.status = action.payload.Status
         state.role = action.payload.Role
+        state.level = action.payload.level ?? null
         state.clerkID = action.meta.arg.clerkID
         state.username = action.meta.arg.username
       })

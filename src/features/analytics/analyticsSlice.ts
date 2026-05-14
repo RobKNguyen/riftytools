@@ -4,6 +4,7 @@ import { SWITCHBOARD_URL } from '../../services/switchboard'
 export interface PlayerStat {
   user_guid: string
   username: string
+  level: string
   totalgames: number
   wins: number
   losses: number
@@ -38,6 +39,7 @@ export interface LegendStat {
 
 export interface AnalyticsFilters {
   formatGuid: string | null
+  proOnly?: boolean
 }
 
 interface AnalyticsState {
@@ -58,11 +60,12 @@ export const fetchAnalytics = createAsyncThunk<
   { players: PlayerStat[]; legends: LegendStat[] },
   AnalyticsFilters,
   { rejectValue: string; state: { user: { role: string | null } } }
->('analytics/fetch', async ({ formatGuid }, { rejectWithValue, getState }) => {
+>('analytics/fetch', async ({ formatGuid, proOnly }, { rejectWithValue, getState }) => {
   const role = getState().user.role
   const roles = role ? [role] : ['Player']
-  const payload: Record<string, string> = {}
+  const payload: Record<string, string | boolean> = {}
   if (formatGuid) payload['Format_GUID'] = formatGuid
+  if (proOnly) payload['ProOnly'] = true
   const res = await fetch(SWITCHBOARD_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
