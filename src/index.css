@@ -711,9 +711,16 @@ body {
   overflow: hidden;
 }
 
+.matrix-top-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex-shrink: 0;
+}
+
 .matrix-scroll {
   flex: 1;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   cursor: grab;
   min-height: 0;
 }

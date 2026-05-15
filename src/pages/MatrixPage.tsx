@@ -214,8 +214,31 @@ const [playingFilter, setPlayingFilter] = useState<string[]>([])
   const SORTS: [SortBy, string][] = [['winrate', 'Win Rate'], ['games', 'Games'], ['name', 'Name']]
 
   const scrollRef = useRef<HTMLDivElement>(null)
+  const topScrollRef = useRef<HTMLDivElement>(null)
   const isDragging = useRef(false)
   const dragStart = useRef({ x: 0, y: 0, sl: 0, st: 0 })
+
+  useEffect(() => {
+    const main = scrollRef.current
+    const top = topScrollRef.current
+    if (!main || !top) return
+
+    const spacer = top.firstElementChild as HTMLElement
+    const syncWidth = () => { if (spacer) spacer.style.width = main.scrollWidth + 'px' }
+    const ro = new ResizeObserver(syncWidth)
+    ro.observe(main)
+    syncWidth()
+
+    const onMain = () => { top.scrollLeft = main.scrollLeft }
+    const onTop  = () => { main.scrollLeft = top.scrollLeft }
+    main.addEventListener('scroll', onMain)
+    top.addEventListener('scroll', onTop)
+    return () => {
+      ro.disconnect()
+      main.removeEventListener('scroll', onMain)
+      top.removeEventListener('scroll', onTop)
+    }
+  }, [])
 
   function onDragStart(e: React.MouseEvent<HTMLDivElement>) {
     isDragging.current = true
@@ -296,6 +319,10 @@ const [playingFilter, setPlayingFilter] = useState<string[]>([])
                 onChange={setAgainstFilter}
               />
             </div>
+          </div>
+
+          <div ref={topScrollRef} className="matrix-top-scroll">
+            <div style={{ height: '1px' }} />
           </div>
 
           <div
