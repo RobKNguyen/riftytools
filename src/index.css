@@ -695,6 +695,16 @@ body {
 
 /* ── Matrix table ────────────────────────────────────── */
 
+.matrix-page-root {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+@media (max-width: 640px) {
+  .matrix-page-root { height: calc(100vh - 60px); }
+}
+
 .matrix-main {
   flex: 1;
   padding: 24px;
@@ -719,14 +729,17 @@ body {
 
 .matrix-scroll {
   flex: 1;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: scroll;
   cursor: grab;
   min-height: 0;
 }
 
 .matrix-scroll:active {
   cursor: grabbing;
+}
+
+.matrix-scroll::-webkit-scrollbar:horizontal {
+  height: 0;
 }
 
 .matrix-table {
@@ -877,27 +890,125 @@ body {
 
 /* ── Responsive ──────────────────────────────────────── */
 
-@media (max-width: 600px) {
-  .form-row {
-    grid-template-columns: 1fr;
+/* ── Mobile tab bar (hidden on desktop) ──────────────── */
+
+.mobile-tabs {
+  display: none;
+}
+
+/* ── Mobile / responsive ─────────────────────────────── */
+
+@media (max-width: 640px) {
+
+  /* Nav — hide desktop links, show only logo + user btn */
+  .nav { padding: 0 16px; }
+  .nav-links { display: none; }
+
+  /* Bottom tab bar */
+  .mobile-tabs {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #161b22;
+    border-top: 1px solid #30363d;
+    z-index: 200;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
-  .card {
-    padding: 20px 16px;
+  .mobile-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 8px 4px;
+    color: #484f58;
+    text-decoration: none;
+    font-size: 10px;
+    font-weight: 500;
+    transition: color 0.15s;
   }
 
-  .landing-title {
-    font-size: 40px;
-    letter-spacing: -1.5px;
+  .mobile-tab.active {
+    color: #58a6ff;
   }
 
-  .btn-group {
-    flex-wrap: wrap;
+  .mobile-tab svg {
+    flex-shrink: 0;
   }
 
-  .btn-opt {
-    flex: 1 1 calc(50% - 4px);
+  .mobile-signin-btn {
+    background: none;
+    border: none;
+    color: #8b949e;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    padding: 0;
   }
+
+  /* Global page bottom padding to clear the tab bar */
+  .page           { padding: 20px 16px 90px; }
+  main            { padding-bottom: 90px; }
+
+  /* Cards */
+  .card { padding: 16px 14px; }
+
+  /* Typography */
+  .page-title     { font-size: 22px; }
+  .section-heading { font-size: 15px; }
+  .landing-title  { font-size: 36px; letter-spacing: -1.5px; }
+
+  /* Forms */
+  .form-row { grid-template-columns: 1fr; }
+  .btn-group { flex-wrap: wrap; }
+  .btn-opt   { flex: 1 1 calc(50% - 4px); }
+  .format-grid { gap: 6px; }
+
+  /* Log feed */
+  .log-item { padding: 12px 4px; gap: 10px; }
+  .log-legend-img { width: 32px; height: 32px; }
+  .log-headline   { font-size: 13px; }
+  .log-meta       { font-size: 11px; }
+  .log-filters    { flex-wrap: wrap; gap: 8px; }
+
+  /* Matrix page */
+  .matrix-main { padding: 12px 12px 80px; }
+  .matrix-controls {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding-bottom: 12px;
+  }
+  .matrix-controls > div { flex-wrap: wrap; gap: 8px; }
+
+  /* Profile */
+  .profile-header-card { padding: 16px 14px; }
+  .profile-username    { font-size: 20px; }
+  .stats-bar           { gap: 12px; flex-wrap: wrap; }
+  .stat-item           { min-width: 60px; }
+  .top-legends-grid    { grid-template-columns: repeat(2, 1fr); }
+  .recent-item         { gap: 10px; }
+
+  /* Analytics */
+  .analytics-stat-row  { flex-direction: column; gap: 10px; }
+  .analytics-stat-box  { padding: 12px; }
+
+  /* Admin table */
+  .admin-table { font-size: 12px; }
+  .admin-actions { flex-direction: column; gap: 4px; }
+  .admin-btn { font-size: 11px; padding: 4px 8px; }
+  .admin-email { display: none; }
+
+  /* Matrix controls sub-row */
+  .matrix-sort-btns { flex-wrap: wrap; }
+
+  /* Site footer */
+  .site-footer { padding-bottom: 90px; }
 }
 
 /* ── Auth sync / pending screens ─────────────────────── */

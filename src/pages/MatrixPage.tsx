@@ -255,7 +255,7 @@ const [playingFilter, setPlayingFilter] = useState<string[]>([])
   function stopDrag() { isDragging.current = false }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+    <div className="matrix-page-root">
       <Nav />
       <main className="matrix-main">
         <div className="card matrix-card">
