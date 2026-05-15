@@ -92,8 +92,7 @@ export default function MatrixPage() {
   const [formatFilter, setFormatFilter] = useState<string>('')
   const [playerFilter, setPlayerFilter] = useState<string>('')
   const [proOnly, setProOnly] = useState(false)
-  const [legendSearch, setLegendSearch] = useState<string>('')
-  const [playingFilter, setPlayingFilter] = useState<string[]>([])
+const [playingFilter, setPlayingFilter] = useState<string[]>([])
   const [againstFilter, setAgainstFilter] = useState<string[]>([])
 
   useEffect(() => {
@@ -159,9 +158,7 @@ export default function MatrixPage() {
   }, [legendStats, grid])
 
   const sortedLegends = useMemo(() => {
-    const query = legendSearch.toLowerCase().trim()
     return [...legendStats.entries()]
-      .filter(([, s]) => !query || s.name.toLowerCase().includes(query))
       .sort(([guidA, a], [guidB, b]) => {
         if (sortBy === 'name') return a.name.localeCompare(b.name)
         const sA = legendOverall.get(guidA) ?? { wins: 0, total: 0 }
@@ -173,7 +170,7 @@ export default function MatrixPage() {
         }
         return sB.total - sA.total
       })
-  }, [legendStats, legendOverall, sortBy, legendSearch])
+  }, [legendStats, legendOverall, sortBy])
 
   const legendOptions = useMemo(
     () => [...legendStats.entries()].sort(([, a], [, b]) => a.name.localeCompare(b.name)),
@@ -216,11 +213,29 @@ export default function MatrixPage() {
 
   const SORTS: [SortBy, string][] = [['winrate', 'Win Rate'], ['games', 'Games'], ['name', 'Name']]
 
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const isDragging = useRef(false)
+  const dragStart = useRef({ x: 0, y: 0, sl: 0, st: 0 })
+
+  function onDragStart(e: React.MouseEvent<HTMLDivElement>) {
+    isDragging.current = true
+    dragStart.current = { x: e.clientX, y: e.clientY, sl: scrollRef.current!.scrollLeft, st: scrollRef.current!.scrollTop }
+  }
+
+  function onDragMove(e: React.MouseEvent<HTMLDivElement>) {
+    if (!isDragging.current || !scrollRef.current) return
+    e.preventDefault()
+    scrollRef.current.scrollLeft = dragStart.current.sl - (e.clientX - dragStart.current.x)
+    scrollRef.current.scrollTop  = dragStart.current.st - (e.clientY - dragStart.current.y)
+  }
+
+  function stopDrag() { isDragging.current = false }
+
   return (
-    <div>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       <Nav />
-      <main style={{ padding: '40px 24px' }}>
-        <div className="card" style={{ overflowX: 'auto' }}>
+      <main className="matrix-main">
+        <div className="card matrix-card">
           <div className="matrix-controls">
             <h1 className="page-title" style={{ marginBottom: 0 }}>
               Matchup <span>Matrix</span>
@@ -267,16 +282,7 @@ export default function MatrixPage() {
                 Pro Only
               </button>
 
-              <input
-                className="form-select"
-                type="text"
-                placeholder="Search legends…"
-                value={legendSearch}
-                onChange={e => setLegendSearch(e.target.value)}
-                style={{ width: 'auto', minWidth: '160px' }}
-              />
-
-              <LegendMultiSelect
+<LegendMultiSelect
                 label="Playing"
                 options={legendOptions}
                 selected={playingFilter}
@@ -292,77 +298,86 @@ export default function MatrixPage() {
             </div>
           </div>
 
-          {status === 'loading' && <p className="placeholder-text">Loading matrix…</p>}
-          {status === 'error'   && <div className="status-msg error">{error}</div>}
-          {status === 'success' && data.length === 0 && (
-            <p className="placeholder-text">No data yet. Submit some results first.</p>
-          )}
+          <div
+            ref={scrollRef}
+            className="matrix-scroll"
+            onMouseDown={onDragStart}
+            onMouseMove={onDragMove}
+            onMouseUp={stopDrag}
+            onMouseLeave={stopDrag}
+          >
+            {status === 'loading' && <p className="placeholder-text">Loading matrix…</p>}
+            {status === 'error'   && <div className="status-msg error">{error}</div>}
+            {status === 'success' && data.length === 0 && (
+              <p className="placeholder-text">No data yet. Submit some results first.</p>
+            )}
 
-          {status === 'success' && rowLegends.length > 0 && (
-            <table className="matrix-table">
-              <thead>
-                <tr>
-                  <th className="matrix-th matrix-th-label" />
-                  <th className="matrix-th matrix-th-overall">Overall</th>
-                  {colLegends.map(([guid, s]) => (
-                    <th key={guid} className="matrix-th">
-                      <div className="matrix-legend-header">
-                        <img src={s.imageurl} alt={s.name} className="matrix-legend-img" />
-                        <span className="matrix-legend-name">{s.name}</span>
-                      </div>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {rowLegends.map(([rowGuid, rowStat]) => {
-                  let overallWins = 0, overallLosses = 0, overallDraws = 0
-                  colLegends.forEach(([colGuid]) => {
-                    if (colGuid === rowGuid) return
-                    const cell = resolveCell(rowGuid, colGuid)
-                    if (cell) { overallWins += cell.wins; overallLosses += cell.losses; overallDraws += cell.draws }
-                  })
-                  const overallGames = overallWins + overallLosses + overallDraws
-                  const rowWR = overallGames > 0 ? overallWins / overallGames : 0
-                  const pctOverall = overallGames > 0 ? (rowWR * 100).toFixed(2) : null
-                  return (
-                    <tr key={rowGuid} className="matrix-row">
-                      <td className="matrix-td matrix-td-label">
-                        <div className="matrix-row-label">
-                          <img src={rowStat.imageurl} alt={rowStat.name} className="matrix-legend-img" />
-                          <span>{rowStat.name}</span>
+            {status === 'success' && rowLegends.length > 0 && (
+              <table className="matrix-table">
+                <thead>
+                  <tr>
+                    <th className="matrix-th matrix-th-label" />
+                    <th className="matrix-th matrix-th-overall">Overall</th>
+                    {colLegends.map(([guid, s]) => (
+                      <th key={guid} className="matrix-th">
+                        <div className="matrix-legend-header">
+                          <img src={s.imageurl} alt={s.name} className="matrix-legend-img" />
+                          <span className="matrix-legend-name">{s.name}</span>
                         </div>
-                      </td>
-                      <td className="matrix-td matrix-td-overall" style={{ background: cellBg(rowWR, overallGames) }}>
-                        {pctOverall !== null ? (
-                          <>
-                            <span className="matrix-wr" style={{ color: wrColor(rowWR, overallGames) }}>{pctOverall}%</span>
-                            <span className="matrix-record">{overallWins}W {overallLosses}L{overallDraws > 0 ? ` ${overallDraws}D` : ''}</span>
-                          </>
-                        ) : (
-                          <span className="matrix-empty">—</span>
-                        )}
-                      </td>
-                      {colLegends.map(([colGuid]) => {
-                        if (rowGuid === colGuid) return <td key={colGuid} className="matrix-td matrix-td-self" />
-                        const cell = resolveCell(rowGuid, colGuid)
-                        if (!cell) return <td key={colGuid} className="matrix-td"><span className="matrix-empty">—</span></td>
-                        const cellGames = cell.wins + cell.losses + cell.draws
-                        const wr01 = cellGames > 0 ? cell.wins / cellGames : 0
-                        const pct = (wr01 * 100).toFixed(2)
-                        return (
-                          <td key={colGuid} className="matrix-td" style={{ background: cellBg(wr01, cellGames) }}>
-                            <span className="matrix-wr" style={{ color: wrColor(wr01, cellGames) }}>{pct}%</span>
-                            <span className="matrix-record">{cell.wins}W {cell.losses}L{cell.draws > 0 ? ` ${cell.draws}D` : ''}</span>
-                          </td>
-                        )
-                      })}
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          )}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {rowLegends.map(([rowGuid, rowStat]) => {
+                    let overallWins = 0, overallLosses = 0, overallDraws = 0
+                    colLegends.forEach(([colGuid]) => {
+                      if (colGuid === rowGuid) return
+                      const cell = resolveCell(rowGuid, colGuid)
+                      if (cell) { overallWins += cell.wins; overallLosses += cell.losses; overallDraws += cell.draws }
+                    })
+                    const overallGames = overallWins + overallLosses + overallDraws
+                    const rowWR = overallGames > 0 ? overallWins / overallGames : 0
+                    const pctOverall = overallGames > 0 ? (rowWR * 100).toFixed(2) : null
+                    return (
+                      <tr key={rowGuid} className="matrix-row">
+                        <td className="matrix-td matrix-td-label">
+                          <div className="matrix-row-label">
+                            <img src={rowStat.imageurl} alt={rowStat.name} className="matrix-legend-img" />
+                            <span>{rowStat.name}</span>
+                          </div>
+                        </td>
+                        <td className="matrix-td matrix-td-overall">
+                          {pctOverall !== null ? (
+                            <>
+                              <span className="matrix-wr" style={{ color: wrColor(rowWR, overallGames) }}>{pctOverall}%</span>
+                              <span className="matrix-record">{overallWins}W {overallLosses}L{overallDraws > 0 ? ` ${overallDraws}D` : ''}</span>
+                            </>
+                          ) : (
+                            <span className="matrix-empty">—</span>
+                          )}
+                        </td>
+                        {colLegends.map(([colGuid]) => {
+                          if (rowGuid === colGuid) return <td key={colGuid} className="matrix-td matrix-td-self" />
+                          const cell = resolveCell(rowGuid, colGuid)
+                          if (!cell) return <td key={colGuid} className="matrix-td"><span className="matrix-empty">—</span></td>
+                          const cellGames = cell.wins + cell.losses + cell.draws
+                          const wr01 = cellGames > 0 ? cell.wins / cellGames : 0
+                          const pct = (wr01 * 100).toFixed(2)
+                          return (
+                            <td key={colGuid} className="matrix-td" style={{ background: cellBg(wr01, cellGames) }}>
+                              <span className="matrix-wr" style={{ color: wrColor(wr01, cellGames) }}>{pct}%</span>
+                              <span className="matrix-record">{cell.wins}W {cell.losses}L{cell.draws > 0 ? ` ${cell.draws}D` : ''}</span>
+                            </td>
+                          )
+                        })}
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
       </main>
     </div>

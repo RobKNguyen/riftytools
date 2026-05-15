@@ -695,9 +695,36 @@ body {
 
 /* ── Matrix table ────────────────────────────────────── */
 
+.matrix-main {
+  flex: 1;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.matrix-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.matrix-scroll {
+  flex: 1;
+  overflow: auto;
+  cursor: grab;
+  min-height: 0;
+}
+
+.matrix-scroll:active {
+  cursor: grabbing;
+}
+
 .matrix-table {
-  border-collapse: collapse;
-  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
   font-size: 13px;
 }
 
@@ -710,18 +737,30 @@ body {
   letter-spacing: 0.05em;
   border-bottom: 1px solid #30363d;
   white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #161b22;
 }
 
 .matrix-th-label {
   text-align: left;
   color: #484f58;
-  min-width: 140px;
+  min-width: 180px;
+  position: sticky;
+  left: 0;
+  z-index: 4;
+  box-shadow: 4px 0 8px #0d1117;
 }
 
 .matrix-th-overall {
   color: #8b949e;
   border-right: 1px solid #30363d;
   font-size: 10px;
+  position: sticky;
+  left: 180px;
+  z-index: 3;
+  box-shadow: 4px 0 8px #0d1117;
 }
 
 .matrix-legend-header {
@@ -763,6 +802,16 @@ body {
   white-space: nowrap;
   border-right: 1px solid #30363d;
   padding-right: 16px;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: #161b22;
+  overflow: hidden;
+  box-shadow: 4px 0 8px #0d1117;
+}
+
+.matrix-row:hover .matrix-td-label {
+  background: #1a2030;
 }
 
 .matrix-row-label {
@@ -776,6 +825,15 @@ body {
 
 .matrix-td-overall {
   border-right: 1px solid #30363d;
+  position: sticky;
+  left: 180px;
+  z-index: 1;
+  background: #161b22;
+  box-shadow: 4px 0 8px #0d1117;
+}
+
+.matrix-row:hover .matrix-td-overall {
+  background: #1a2030;
 }
 
 .matrix-td-self {
@@ -783,8 +841,9 @@ body {
 }
 
 .matrix-row:hover .matrix-td {
-  background-color: rgba(255, 255, 255, 0.02);
+  background-color: #1a2030;
 }
+
 
 .matrix-row:hover .matrix-td-self {
   background: rgba(0, 0, 0, 0.25);
